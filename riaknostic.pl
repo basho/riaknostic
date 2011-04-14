@@ -29,24 +29,34 @@ sub collect_status {
   chomp(%riak_data);
   return %riak_data;
 }
-say "Running Riaknostic...";
 
-my $basedir = $ARGV[0];
-
-my @release_dirs = ("$basedir/libexec/releases", "$basedir/releases", "$basedir");
-my($dir, $riak);
-
-foreach $dir (@release_dirs) {
-  if (-e "$dir/start_erl.data") {
-    $riak = $dir;
-    say "Riak node found in $riak";
-  }
+sub print_basic_data {
+  my %riak_data = @_;
+  say "Host operating system: $riak_data{'os'} $riak_data{'os_version'} (arch: $riak_data{'arch'})";
+  say "Riak version: ", $riak_data{'riak_version'};
+  say "Riak Search: ", ($riak_data{'riak_search_version'} ? "yes" : "no");
+  say "Erlang runtime: $riak_data{'erlang_version'}";
+  say "Number of partitions: $riak_data{'partitions'}";
+  say "Ring creation size: $riak_data{'ring_creation_size'}";
 }
 
-if (!$riak) {
+sub find_riak {
+  my($basedir) = @_;
+  my @release_dirs = ("$basedir/libexec/releases", "$basedir/releases", "$basedir");
+  my $dir;
+  foreach $dir (@release_dirs) {
+    if (-e "$dir/start_erl.data") {
+      say "Riak node found in $dir";
+      return $dir
+    }
+  }
   say "Couldn't find a Riak installation in $basedir";
   exit 1;
 }
+say "Running Riaknostic...";
+
+my $basedir = $ARGV[0];
+my $riak = find_riak($basedir);
 
 my $admin_cmd = `which riak-admin riaksearch-admin | tail -n 1 2>/dev/null`;
 
@@ -54,13 +64,8 @@ if (!$admin_cmd) {
   say "Couldn't find the Riak admin tool in your \$PATH";
   exit 1;
 }
-
 chomp($admin_cmd);
 my @riak_status = `$admin_cmd status`;
 my %riak_data = collect_status($riak, @riak_status);
-say "Host operating system: $riak_data{'os'} $riak_data{'os_version'} (arch: $riak_data{'arch'})";
-say "Riak version: ", $riak_data{'riak_version'};
-say "Riak Search: ", ($riak_data{'riak_search_version'} ? "yes" : "no");
-say "Erlang runtime: $riak_data{'erlang_version'}";
-say "Number of partitions: $riak_data{'partitions'}";
-say "Ring creation size: $riak_data{'ring_creation_size'}";
+
+print_basic_data(%riak_data);
