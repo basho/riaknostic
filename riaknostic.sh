@@ -1,7 +1,7 @@
 #/bin/bash
 
 value_from_status() {
-  __ret=`echo "$riak_status" | grep $1 | sed 's/.\{1,\}<<"\(.*\)">>/\1/'`
+  __ret=`echo "$riak_status" | grep $1 | sed 's/.\{1,\} : \(\<\<"\)\{0,1\}\([^>]*\)\("\>\>\)\{0,1\}/\2/'`
   eval "export ${1}=\"$__ret\""
 }
 echo "Running Riaknostic..."
@@ -37,6 +37,7 @@ riak_version=`awk '{print $2}' $dir/start_erl.data`
 riak_status=`$admin_cmd status`
 value_from_status 'riak_search_core_version'
 value_from_status 'sys_system_version'
+value_from_status 'ring_num_partitions'
 
 arch=`uname -p`
 os=`uname -s`
@@ -51,3 +52,4 @@ fi
 
 echo "Riak running on: $os $os_version (arch: $arch)"
 echo "Erlang runtime: ${sys_system_version}"
+echo "Number of partitions: ${ring_num_partitions}"
