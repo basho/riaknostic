@@ -1,5 +1,9 @@
 #/bin/bash
 
+value_from_status() {
+  __ret=`echo "$riak_status" | grep $1 | sed 's/.\{1,\}<<"\(.*\)">>/\1/'`
+  eval "export ${1}=\"$__ret\""
+}
 echo "Running Riaknostic..."
 
 basedir=$1
@@ -31,13 +35,14 @@ fi
 
 riak_version=`awk '{print $2}' $dir/start_erl.data`
 riak_status=`$admin_cmd status`
-riak_search=`echo "$riak_status" | grep riak_search_core_version | awk '{print $3}' | sed 's/<<"\(.*\)">>/\1/'`
+value_from_status 'riak_search_core_version'
+value_from_status 'sys_system_version'
 
 arch=`uname -p`
 os=`uname -s`
 os_version=`uname -r`
 
-if [ -z "$riak_search" ]
+if [ -z "$riak_search_core_version" ]
 then
   echo "Riak version: $riak_version"
 else
@@ -45,3 +50,4 @@ else
 fi
 
 echo "Riak running on: $os $os_version (arch: $arch)"
+echo "Erlang runtime: ${sys_system_version}"
