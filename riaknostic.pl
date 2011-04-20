@@ -19,13 +19,16 @@ sub value_from_status {
 
 sub collect_status {
   my($riak, @status) = @_;
-  my %riak_data = ();
-  $riak_data{'riak_version'} = pop @{[split(" ", slurp("$riak/start_erl.data"))]};
-  ($riak_data{'arch'}, $riak_data{'os'}, $riak_data{"os_version"}) = (`uname -p`, `uname -s`, `uname -r`);
-  $riak_data{'riak_search_version'} = value_from_status("riak_search_core_version", @status);
-  $riak_data{'erlang_version'} = value_from_status("sys_system_version", @status);
-  $riak_data{'partitions'} = value_from_status("ring_num_partitions", @status);
-  $riak_data{'ring_creation_size'} = value_from_status("ring_creation_size", @status);
+  my %riak_data = (
+    riak_version => pop(@{[split(" ", slurp("$riak/start_erl.data"))]}),
+    arch => `uname -p`,
+    os => `uname -s`,
+    os_version => `uname -r`,
+    riak_search_version => value_from_status("riak_search_core_version", @status),
+    erlang_version => value_from_status("sys_system_version", @status),
+    partitions => value_from_status("ring_num_partitions", @status),
+    ring_creation_size => value_from_status("ring_creation_size", @status)
+  );
   chomp(%riak_data);
   return %riak_data;
 }
