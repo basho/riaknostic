@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use strict;
+use strict "vars";
 use File::Slurp 'slurp';
 
 sub say {
@@ -14,6 +14,11 @@ sub value_from_status {
   my @ret = grep(/$value/, @status);
   my $value = shift(@ret);
   $value =~ s/^.{1,} : (\<\<")?([^\>]+)("\>\>)?$/$2/;
+  if ($value =~ /^\[.+\]$/) {
+    $value =~ s/^\[(.+)\]$/(\1)/g;
+    my @val = eval($value);
+    $value = \@val;
+  }
   $value;
 }
 
@@ -27,10 +32,11 @@ sub collect_status {
     riak_search_version => value_from_status("riak_search_core_version", @status),
     erlang_version => value_from_status("sys_system_version", @status),
     partitions => value_from_status("ring_num_partitions", @status),
-    ring_creation_size => value_from_status("ring_creation_size", @status)
+    ring_creation_size => value_from_status("ring_creation_size", @status),
+    nodes_count => value_from_status("ring_members", @status)
   );
   chomp(%riak_data);
-  return %riak_data;
+  %riak_data;
 }
 
 sub print_basic_data {
@@ -41,6 +47,7 @@ sub print_basic_data {
   say "Erlang runtime: $riak_data{'erlang_version'}";
   say "Number of partitions: $riak_data{'partitions'}";
   say "Ring creation size: $riak_data{'ring_creation_size'}";
+  say "Number of nodes: ", scalar(@{$riak_data{'nodes_count'}});
 }
 
 sub find_riak {
