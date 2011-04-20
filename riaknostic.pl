@@ -2,6 +2,7 @@
 
 use strict "vars";
 use File::Slurp 'slurp';
+use Cwd 'abs_path';
 
 sub say {
   my(@to_say) = @_;
@@ -33,7 +34,8 @@ sub collect_status {
     erlang_version => value_from_status("sys_system_version", @status),
     partitions => value_from_status("ring_num_partitions", @status),
     ring_creation_size => value_from_status("ring_creation_size", @status),
-    nodes_count => value_from_status("ring_members", @status)
+    nodes_count => value_from_status("ring_members", @status),
+    logs => guess_log_directory($riak)
   );
   chomp(%riak_data);
   %riak_data;
@@ -51,7 +53,7 @@ sub print_basic_data {
 }
 
 sub find_riak {
-  my($basedir) = @_;
+  my $basedir = $ARGV[0];
   my @release_dirs = ("$basedir/libexec/releases", "$basedir/releases", "$basedir");
   my $dir;
   foreach $dir (@release_dirs) {
@@ -77,7 +79,27 @@ sub check_node_running {
 sub check_ring_size_not_equals_number_partitions {
   my(%riak_data, @errors) = @_;
   if ($riak_data{'partitions'} != $riak_data{'ring_creation_size'}) {
-    push(@errors, "Number of partitions ($riak_data{'partitions'}) doesn't equal initial ring creation size ($riak_data{'ring_creation_size'}).");
+    push(@{${[1]}}, "Number of partitions ($riak_data{'partitions'}) doesn't equal initial ring creation size ($riak_data{'ring_creation_size'}).");
+  }
+}
+
+sub check_dump_files {
+  my(%riak_data) = %{$_[0]};
+  my $logs = $riak_data{'logs'};
+  if (-e "$logs/erl_crash.dump") {
+    push(@{$_[1]}, "Found an Erlang crash dump in $logs");
+  }
+}
+
+sub check_emfile_errors {
+  my(%riak_data) = %{$_[0]};
+  my $logs = $riak_data{'logs'};
+  my @erlang_logs = <$logs/erlang.log.*>;
+  for my $log (@erlang_logs) {
+    open FILE, "<$log";
+    if (grep /emfile/, <FILE>) {
+      push(@{$_[1]}, "Found errors indicating there are not enough available file descriptors. Increase the value using ulimit -n");
+    }
   }
 }
 
@@ -89,13 +111,33 @@ sub find_commands {
   return @cmds;
 }
 
+sub guess_log_directory {
+  my($riak) = @_;
+  my @log_directories = ("$riak/../log", "$riak/log", "/var/log/riak", "/opt/riak/log");
+  for my $dir (@log_directories) {
+    if (-d $dir) {
+      $dir = abs_path($dir);
+      say "Using Riak logs in $dir";
+      return $dir;
+    }
+  }
+}
+
+sub run_analysis {
+  my %riak_data = @_;
+  say "\nAnalyzing...";
+  my @errors = ();
+
+  &check_ring_size_not_equals_number_partitions(\%riak_data, \@errors);
+  &check_dump_files(\%riak_data, \@errors);
+  &check_emfile_errors(\%riak_data, \@errors);
+ 
+  say join("\n", @errors)
+}
+
 say "Running Riaknostic...";
 
-my $basedir = $ARGV[0];
-my $riak = find_riak($basedir);
-
-my @commands = find_commands();
-
+my $riak = find_riak();
 my($admin_cmd, $riak_cmd) = find_commands();
 
 if (!$admin_cmd) {
@@ -106,12 +148,8 @@ if (!$admin_cmd) {
 my $running = check_node_running($riak_cmd);
 
 my @riak_status = `$admin_cmd status`;
-my %riak_data = collect_status($riak, @riak_status);
-my @errors = ();
+my %riak_data = collect_status($riak, `$admin_cmd status`);
+$riak_data{'riak_home'} = $riak;
 
 print_basic_data(%riak_data);
-
-say "";
-say "Analyzing...";
-
-check_ring_size_not_equals_number_partitions(%riak_data, @errors);
+run_analysis(%riak_data);
