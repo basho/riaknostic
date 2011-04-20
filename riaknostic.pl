@@ -53,6 +53,14 @@ sub find_riak {
   say "Couldn't find a Riak installation in $basedir";
   exit 1;
 }
+
+sub check_ring_size_not_equals_number_partitions {
+  my(%riak_data, @errors) = @_;
+  if ($riak_data{'partitions'} != $riak_data{'ring_creation_size'}) {
+    say "Number of partitions ($riak_data{'partitions'}) doesn't equal initial ring creation size ($riak_data{'ring_creation_size'}).";
+  }
+}
+
 say "Running Riaknostic...";
 
 my $basedir = $ARGV[0];
@@ -67,5 +75,11 @@ if (!$admin_cmd) {
 chomp($admin_cmd);
 my @riak_status = `$admin_cmd status`;
 my %riak_data = collect_status($riak, @riak_status);
+my @errors = [];
 
 print_basic_data(%riak_data);
+
+say "";
+say "Analyzing...";
+
+check_ring_size_not_equals_number_partitions(%riak_data, @errors);
