@@ -54,11 +54,29 @@ sub find_riak {
   exit 1;
 }
 
+sub check_node_running {
+  my($riak) = @_;
+  my @output = `$riak ping`;
+  if (grep(/pong/, @output)) {
+    say "Riak node is running.";
+  } else {
+    say "Riak node is not running.";
+  }
+}
+
 sub check_ring_size_not_equals_number_partitions {
   my(%riak_data, @errors) = @_;
   if ($riak_data{'partitions'} != $riak_data{'ring_creation_size'}) {
-    say "Number of partitions ($riak_data{'partitions'}) doesn't equal initial ring creation size ($riak_data{'ring_creation_size'}).";
+    push(@errors, "Number of partitions ($riak_data{'partitions'}) doesn't equal initial ring creation size ($riak_data{'ring_creation_size'}).");
   }
+}
+
+sub find_commands {
+  my @cmds = ();
+  push(@cmds, `which riaksearch-admin riak-admin | tail -n 1 2>/dev/null`);
+  push(@cmds, `which riaksearch riak | tail -n 1 2>/dev/null`);
+  chomp(@cmds);
+  return @cmds;
 }
 
 say "Running Riaknostic...";
@@ -66,16 +84,20 @@ say "Running Riaknostic...";
 my $basedir = $ARGV[0];
 my $riak = find_riak($basedir);
 
-my $admin_cmd = `which riak-admin riaksearch-admin | tail -n 1 2>/dev/null`;
+my @commands = find_commands();
+
+my($admin_cmd, $riak_cmd) = find_commands();
 
 if (!$admin_cmd) {
   say "Couldn't find the Riak admin tool in your \$PATH";
   exit 1;
 }
-chomp($admin_cmd);
+
+my $running = check_node_running($riak_cmd);
+
 my @riak_status = `$admin_cmd status`;
 my %riak_data = collect_status($riak, @riak_status);
-my @errors = [];
+my @errors = ();
 
 print_basic_data(%riak_data);
 
