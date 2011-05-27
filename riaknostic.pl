@@ -99,13 +99,16 @@ sub check_node_running {
   my @output = `$riak ping`;
   if (grep(/pong/, @output)) {
     say "Riak node is running.";
+    1;
   } else {
     say "Riak node is not running.";
+    0;
   }
 }
 
 sub check_ring_size_not_equals_number_partitions {
   my(%riak_data, @errors) = @_;
+  return unless $riak_data{'running'};
   if ($riak_data{'partitions'} != $riak_data{'ring_creation_size'}) {
     push(@{${[1]}}, "Number of partitions ($riak_data{'partitions'}) doesn't equal initial ring creation size ($riak_data{'ring_creation_size'}).");
   }
@@ -133,6 +136,7 @@ sub check_emfile_errors {
 
 sub check_number_of_partitions_and_nodes {
   my(%riak_data) = %{$_[0]};
+  return unless $riak_data{'running'};
   my $partitions = $riak_data{'partitions'};
   my $nodes = scalar(@{$riak_data{'nodes_count'}});
   my $ratio = $partitions / $nodes;
@@ -152,6 +156,7 @@ sub check_node_part_of_ring {
 
 sub check_connected_nodes {
   my(%riak_data) = %{$_[0]};
+  return unless $riak_data{'running'};
   my $my_node = $riak_data{'nodename'};
   my @ring_members = @{$riak_data{'nodes_count'}};
   my @connected_nodes = @{$riak_data{'connected_nodes'}};
@@ -196,10 +201,11 @@ sub run_analysis {
   &check_connected_nodes(\%riak_data, \@errors);
  
   if (scalar(@errors) > 0) {
-    say join("\n", @errors)
+    say join("\n", @errors);
   } else {
-    say "All good!"
+    say "All good!";
   }
+  say "";
 }
 
 say "Running Riaknostic...";
@@ -217,6 +223,7 @@ my $running = check_node_running($riak_cmd);
 my @riak_status = align_status_output(`$admin_cmd status`);
 my %riak_data = collect_status($riak, @riak_status);
 $riak_data{'riak_home'} = $riak;
+$riak_data{'running'} = $running;
 
 print_basic_data(%riak_data);
 run_analysis(%riak_data);
