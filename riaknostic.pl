@@ -10,6 +10,26 @@ sub say {
   print "\n";
 }
 
+sub align_status_output { 
+  my(@output) = @_; 
+  my $full_line = ""; 
+  my @result = (); 
+  foreach my $line (@output) { 
+    chomp($line); 
+    if ($line =~ /[a-z_] :/) { 
+      if ($full_line) { 
+        $full_line .= "\n"; 
+        push(@result, $full_line); 
+      } 
+      $full_line = $line; 
+    } else { 
+      $line =~ s/^\s+//; 
+      $full_line .= $line; 
+    } 
+  } 
+  @result; 
+} 
+                                                         
 sub value_from_status {
   my($value, @status) = @_;
   my @ret = grep(/$value/, @status);
@@ -177,8 +197,8 @@ if (!$admin_cmd) {
 
 my $running = check_node_running($riak_cmd);
 
-my @riak_status = `$admin_cmd status`;
-my %riak_data = collect_status($riak, `$admin_cmd status`);
+my @riak_status = align_status_output(`$admin_cmd status`);
+my %riak_data = collect_status($riak, @riak_status);
 $riak_data{'riak_home'} = $riak;
 
 print_basic_data(%riak_data);
