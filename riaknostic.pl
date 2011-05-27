@@ -14,11 +14,16 @@ sub value_from_status {
   my($value, @status) = @_;
   my @ret = grep(/$value/, @status);
   my $value = shift(@ret);
-  $value =~ s/^.{1,} : (\<\<")?([^\>]+)("\>\>)?$/$2/;
+  my @val;
+  $value =~ s/^.{1,} : (\<\<"|')?([^\>]+)("\>\>|')?$/$2/;
   if ($value =~ /^\[.+\]$/) {
     $value =~ s/^\[(.+)\]$/(\1)/g;
-    my @val = eval($value);
+    @val = eval($value);
     $value = \@val;
+  }
+  
+  if ($value =~ /'$/) {
+    $value =~ s/(.+)'$/\1/;
   }
   $value;
 }
@@ -35,6 +40,7 @@ sub collect_status {
     partitions => value_from_status("ring_num_partitions", @status),
     ring_creation_size => value_from_status("ring_creation_size", @status),
     nodes_count => value_from_status("ring_members", @status),
+    nodename => value_from_status("nodename", @status),
     logs => guess_log_directory($riak)
   );
   chomp(%riak_data);
@@ -103,6 +109,24 @@ sub check_emfile_errors {
   }
 }
 
+sub check_number_of_partitions_and_nodes {
+  my(%riak_data) = %{$_[0]};
+  my $partitions = $riak_data{'partitions'};
+  my $nodes = scalar(@{$riak_data{'nodes_count'}});
+  if ($partitions / $nodes < 20) {
+    push(@{$_[1]}, "The number of partitions ($riak_data{'partitions'}) per node is less than recommended.")
+  }
+}
+
+sub check_node_part_of_ring {
+  my(%riak_data) = %{$_[0]};
+  my $node = $riak_data{'nodename'};
+  my @ring_members = @{$riak_data{'nodes_count'}};
+  if (not grep {$_ eq $node} @ring_members) {
+    push(@{$_[1]}, "The current node is not part of the Riak ring.")
+  }
+}
+
 sub find_commands {
   my @cmds = ();
   push(@cmds, `which riaksearch-admin riak-admin | tail -n 1 2>/dev/null`);
@@ -131,8 +155,14 @@ sub run_analysis {
   &check_ring_size_not_equals_number_partitions(\%riak_data, \@errors);
   &check_dump_files(\%riak_data, \@errors);
   &check_emfile_errors(\%riak_data, \@errors);
+  &check_number_of_partitions_and_nodes(\%riak_data, \@errors);
+  &check_node_part_of_ring(\%riak_data, \@errors);
  
-  say join("\n", @errors)
+  if (scalar(@errors) > 0) {
+    say join("\n", @errors)
+  } else {
+    say "All good!"
+  }
 }
 
 say "Running Riaknostic...";
