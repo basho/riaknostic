@@ -61,6 +61,7 @@ sub collect_status {
     ring_creation_size => value_from_status("ring_creation_size", @status),
     nodes_count => value_from_status("ring_members", @status),
     nodename => value_from_status("nodename", @status),
+    connected_nodes => value_from_status("connected_nodes", @status),
     logs => guess_log_directory($riak)
   );
   chomp(%riak_data);
@@ -76,6 +77,7 @@ sub print_basic_data {
   say "Number of partitions: $riak_data{'partitions'}";
   say "Ring creation size: $riak_data{'ring_creation_size'}";
   say "Number of nodes: ", scalar(@{$riak_data{'nodes_count'}});
+  say "Number of connected nodes: ", scalar(@{$riak_data{'connected_nodes'}});
 }
 
 sub find_riak {
@@ -133,8 +135,9 @@ sub check_number_of_partitions_and_nodes {
   my(%riak_data) = %{$_[0]};
   my $partitions = $riak_data{'partitions'};
   my $nodes = scalar(@{$riak_data{'nodes_count'}});
-  if ($partitions / $nodes < 20) {
-    push(@{$_[1]}, "The number of partitions ($riak_data{'partitions'}) per node is less than recommended.")
+  my $ratio = $partitions / $nodes;
+  if ($ratio < 8 or $ratio > 64) {
+    push(@{$_[1]}, "The number of partitions per node ($ratio) is less than recommended. Should be between 8 and 64.")
   }
 }
 
@@ -144,6 +147,19 @@ sub check_node_part_of_ring {
   my @ring_members = @{$riak_data{'nodes_count'}};
   if (not grep {$_ eq $node} @ring_members) {
     push(@{$_[1]}, "The current node is not part of the Riak ring.")
+  }
+}
+
+sub check_connected_nodes {
+  my(%riak_data) = %{$_[0]};
+  my $my_node = $riak_data{'nodename'};
+  my @ring_members = @{$riak_data{'nodes_count'}};
+  my @connected_nodes = @{$riak_data{'connected_nodes'}};
+  for my $node (@ring_members) {
+    next if $node eq $my_node;
+    if (not grep {$_ eq $node} @connected_nodes) {
+      push(@{$_[1]}, "Node $node is part of the ring but not connected.")
+    }
   }
 }
 
@@ -177,6 +193,7 @@ sub run_analysis {
   &check_emfile_errors(\%riak_data, \@errors);
   &check_number_of_partitions_and_nodes(\%riak_data, \@errors);
   &check_node_part_of_ring(\%riak_data, \@errors);
+  &check_connected_nodes(\%riak_data, \@errors);
  
   if (scalar(@errors) > 0) {
     say join("\n", @errors)
