@@ -13,8 +13,8 @@ main(Config) ->
       pong ->
         [Node|_] = nodes(),
         RiakData = rpc:call(Node, riak_kv_stat, get_stats, []),
-        io:format("~s~n", [RiakData])
   end,
+
   {ok, Modules} = application:get_env(riaknostic, modules),
   Runner = fun(ModuleName) ->
       Module = list_to_atom("riaknostic_" ++ ModuleName),
