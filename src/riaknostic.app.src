@@ -1,0 +1,14 @@
+{application, riaknostic,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { riaknostic_app, []}},
+  {env, [
+    {modules, ["riak_data"]}
+  ]}
+ ]}.
