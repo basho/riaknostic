@@ -9,6 +9,7 @@
                  ]},
   {mod, { riaknostic_app, []}},
   {env, [
-    {modules, ["riak_data"]}
+    {modules, ["riak_data"]},
+    {riak_homes, ["/usr/lib64/riak", "/opt/riak"]}
   ]}
  ]}.
