@@ -43,25 +43,16 @@ run(Directories) ->
   lists:foreach(Runner, Modules).
 
 find_riak([]) ->
-  false;
+  [];
 find_riak([{Dir, ReleaseDirs}|Directories]) ->
-  Result = lists:map(fun(ReleaseDir) ->
-    case filelib:is_file(ReleaseDir ++ "start_erl.data") of
-      true ->
-        Dir;
-      false ->
-        find_riak(Directories)
-    end
-  end, ReleaseDirs),
-  [Result1|_] = lists:foldl(fun(Dir1, Acc) ->
-    case Dir1 of
-      false ->
-        Acc;
-      _ ->
-        Acc ++ [Dir1]
-    end
-  end, [], Result),
-  Result1.
+  case lists:any(fun(ReleaseDir) ->
+                   filelib:is_file(ReleaseDir ++ "start_erl.data")
+                 end, ReleaseDirs) of
+    true ->
+      Dir;
+    false ->
+      find_riak(Directories)
+  end.
 
 find_riak_logs([]) ->
   false;
