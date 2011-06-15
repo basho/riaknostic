@@ -2,6 +2,8 @@
 -export([main/1,
          run/1,
          find_riak/1,
+         find_riak_logs/1,
+         find_logs/1,
          fetch_riak_stats/1,
          ping_riak/0,
          print_basic_info/1]).
@@ -14,7 +16,11 @@ run([]) ->
   {ok, Directories} = application:get_env(riaknostic, modules),
   riaknostic:run(Directories);
 run(Directories) ->
-  find_riak([{Dir, [Dir ++ "/libexec/releases/", Dir ++ "/releases/"]} || Dir <- Directories]),
+  RiakHome = find_riak([{Dir, [Dir ++ "/libexec/releases/", Dir ++ "/releases/"]} || Dir <- Directories]),
+  io:format("Found Riak installation in: ~s~n", [RiakHome]),
+
+  RiakLogs = find_logs(RiakHome),
+  io:format("Found Riak's log files in: ~s~n", [RiakLogs]),
 
   Node = riaknostic:ping_riak(),
   case Node of
@@ -39,14 +45,37 @@ run(Directories) ->
 find_riak([]) ->
   false;
 find_riak([{Dir, ReleaseDirs}|Directories]) ->
-  lists:foreach(fun(ReleaseDir) ->
+  Result = lists:map(fun(ReleaseDir) ->
     case filelib:is_file(ReleaseDir ++ "start_erl.data") of
       true ->
-        io:format("Found Riak installation in: ~s~n", [ReleaseDir]);
+        Dir;
       false ->
         find_riak(Directories)
     end
-  end, ReleaseDirs).
+  end, ReleaseDirs),
+  [Result1|_] = lists:foldl(fun(Dir1, Acc) ->
+    case Dir1 of
+      false ->
+        Acc;
+      _ ->
+        Acc ++ [Dir1]
+    end
+  end, [], Result),
+  Result1.
+
+find_riak_logs([]) ->
+  false;
+find_riak_logs([Dir|Directories]) ->
+  case filelib:is_dir(Dir) of
+    true ->
+      Dir;
+    false ->
+      find_riak_logs(Directories)
+  end.
+
+find_logs(RiakHome) ->
+  Directories = [RiakHome ++ "/../log", RiakHome ++ "/log", RiakHome ++ "/libexec/log", "/var/log/riak", "/opt/log/riak"],
+  find_riak_logs(Directories).
 
 fetch_riak_stats(Node) ->
   io:format("Fetching riak data...~n"),
