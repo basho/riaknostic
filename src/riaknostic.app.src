@@ -9,7 +9,7 @@
                  ]},
   {mod, { riaknostic_app, []}},
   {env, [
-    {modules, ["riak_data"]},
+    {modules, ["ring_membership"]},
     {riak_homes, ["/usr/lib64/riak", "/opt/riak"]}
   ]}
  ]}.
