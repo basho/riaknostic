@@ -1,9 +1,15 @@
 -module(riaknostic).
--export([run/1,
+-export([main/1,
+         run/1,
          find_riak/1,
          find_riak_logs/1,
          fetch_riak_stats/1,
          ping_riak/0]).
+
+main(Args) ->
+  application:start(riaknostic),
+  Opts = riaknostic_opts:parse(Args),
+  run(proplists:get_value(dirs, Opts, [])).
 
 run([]) ->
   {ok, Dirs} = application:get_env(riaknostic, riak_homes),
@@ -46,8 +52,7 @@ run(Dirs) ->
   Config = dict:from_list([{riak_home, Dir}, {riak_logs, LogDirs}, {riak_stats, Stats}]),
 
   {ok, Modules} = application:get_env(riaknostic, riaknostics),
-  Runner = fun(ModuleName) ->
-    Module = list_to_atom(ModuleName),
+  Runner = fun(Module) ->
     Module:handle_command(Config)
   end,
 
