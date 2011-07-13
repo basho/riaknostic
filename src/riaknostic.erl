@@ -45,7 +45,7 @@ run(Dirs) ->
 
   Config = dict:from_list([{riak_home, Dir}, {riak_logs, LogDirs}, {riak_stats, Stats}]),
 
-  {ok, Modules} = application:get_env(riaknostic, modules),
+  {ok, Modules} = application:get_env(riaknostic, riaknostics),
   Runner = fun(ModuleName) ->
     Module = list_to_atom(ModuleName),
     Module:handle_command(Config)
@@ -68,8 +68,11 @@ find_riak([Dir | Rest]) ->
       find_riak(Rest)
   end.
 
-find_riak_logs(Dir) ->
-  PossibleLogDirs = [Dir ++ "/../log", Dir ++ "/log", Dir ++ "/libexec/log", "/var/log/riak", "/opt/log/riak"],
+find_riak_logs(RiakDir) ->
+  {ok, RiakLogHomes} = application:get_env(riaknostic, riak_log_homes),
+  PossibleLogDirs = lists:map(fun(LogDir) ->
+    re:replace(LogDir, "\\$riak_home", RiakDir, [{return,list}])
+  end, RiakLogHomes),
 
   LogDirs = lists:filter(fun(PossibleLogDir) ->
      filelib:is_file(PossibleLogDir)
