@@ -51,9 +51,7 @@ run(Dirs) ->
     Module:handle_command(Config)
   end,
 
-  lists:foreach(Runner, lists:filter(fun(Mod) -> 
-    Mod /= "riaknostic" andalso Mod /= "riaknostic_sup" andalso Mod /= "riaknostic_app"
-  end ,Modules)).
+  lists:foreach(Runner, Modules).
 
 find_riak([]) ->
   not_found;
