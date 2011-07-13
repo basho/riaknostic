@@ -79,9 +79,10 @@ fetch_riak_stats(Config, Node) ->
   io:format("Fetching riak data...~n"),
   Stats = rpc:call(Node, riak_kv_stat, get_stats, []),
   dict:store(riak_stats, Stats, Config).
- 
+
 ping_riak() ->
-  Ping = net_adm:ping('riaksearch@127.0.0.1'),
+  { ok, [ { NodeSName, _ } | _ ] } = net_adm:names('127.0.0.1'),
+  Ping = net_adm:ping(list_to_atom(NodeSName ++ "@127.0.0.1")),
   case Ping of
     pang ->
       io:format("Couldn't reach the local Riak node.~n"),
