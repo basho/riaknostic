@@ -7,7 +7,7 @@ handle_command(Config) ->
   {connected_nodes, ConnectedNodes} = lists:keyfind(connected_nodes, 1, Stats),
   {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
   {nodename, NodeName} = lists:keyfind(nodename, 1, Stats),
-  io:format("Checking connected nodes: ~p~n", [ConnectedNodes]),
+  io:format("Checking connected nodes: ~p~n", [[CN || CN <- ConnectedNodes, CN =/= node()]]),
   AllNodesInRingConnected = lists:all(fun(Node) ->
     case lists:member(Node, ConnectedNodes) of
       true ->
