@@ -10,7 +10,6 @@
   {mod, { riaknostic_app, []}},
   {env, [
     {modules, [ riaknostic_app,
-                riaknostic_sup,
 
                 riaknostic,
                 riaknostic_opts,
@@ -19,6 +18,7 @@
                 riaknostic_ring_size_partitions,
                 riaknostic_check_dumps,
                 riaknostic_nodes_connected,
+                riaknostic_memory_use,
                 riaknostic_check_bitcask,
                 riaknostic_disk_check
               ]
@@ -29,6 +29,7 @@
                     riaknostic_ring_membership,
                     riaknostic_ring_size_partitions,
                     riaknostic_check_dumps,
+                    riaknostic_memory_use,
                     riaknostic_nodes_connected,
                     riaknostic_check_bitcask,
                     riaknostic_disk_check
