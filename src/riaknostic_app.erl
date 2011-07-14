@@ -10,8 +10,7 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-  {ok, Pid} = riaknostic_sup:start_link(),
-  {ok, Pid}.
+  {ok, self()}.
 
 stop(_State) ->
-    ok.
+  ok.
