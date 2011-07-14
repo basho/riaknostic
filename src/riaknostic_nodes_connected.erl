@@ -21,5 +21,10 @@ handle_command(Config) ->
     end
   end, RingMembers),
   
-  io:format("All nodes in ring connected: ~p~n",[AllNodesInRingConnected]),
+  io:format("All nodes in ring connected? ~p~n", [
+    case AllNodesInRingConnected of
+      true -> yes;
+      false -> no
+    end
+  ]),
   ok.
