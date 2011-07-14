@@ -1,22 +1,26 @@
 -module(riaknostic).
 -export([main/1,
-         run/1,
-         find_riak/1,
-         find_riak_logs/1,
-         fetch_riak_stats/1,
-         ping_riak/0]).
+         run/1
+        ]).
 
+-type opt() :: {atom(), any()}.
+-type opt_list() :: [opt()].
+
+-type path() :: string().
+
+-type reason() :: any().
+-type error() :: {error(), reason()}.
+
+-spec main(list()) -> none().
 main(Args) ->
   application:start(riaknostic),
   Opts = riaknostic_opts:parse(Args),
-  run(proplists:get_value(dirs, Opts, [])).
+  run(Opts).
 
-run([]) ->
-  {ok, Dirs} = application:get_env(riaknostic, riak_homes),
-  riaknostic:run(Dirs);
-
-run(Dirs) ->
-  Dir = case find_riak(Dirs) of
+-spec run(opt_list()) -> none().
+run(Opts) ->
+  SearchDirs = proplists:get_value(dirs, Opts, application:get_env(riaknostic, riak_homes)),
+  Dir = case find_riak(SearchDirs) of
     {found, RDir} ->
       io:format("Found Riak installation in: ~s~n", [RDir]),
       RDir;
@@ -58,6 +62,7 @@ run(Dirs) ->
 
   lists:foreach(Runner, Modules).
 
+-spec find_riak([path()]) -> {found, path()} | not_found.
 find_riak([]) ->
   not_found;
 
@@ -71,6 +76,7 @@ find_riak([Dir | Rest]) ->
       find_riak(Rest)
   end.
 
+-spec find_riak_logs([path()]) -> {found, [path(),...]} | not_found.
 find_riak_logs(RiakDir) ->
   {ok, RiakLogHomes} = application:get_env(riaknostic, riak_log_homes),
   PossibleLogDirs = lists:map(fun(LogDir) ->
@@ -88,9 +94,11 @@ find_riak_logs(RiakDir) ->
       {found, LogDirs}
   end.
 
+-spec fetch_riak_stats(node()) -> any().
 fetch_riak_stats(Node) -> 
   rpc:call(Node, riak_kv_stat, get_stats, []).
 
+-spec ping_riak() -> node() | error().
 ping_riak() ->
   { ok, [ { NodeSName, _ } | _ ] } = net_adm:names(),
   Node = list_to_atom(NodeSName ++ "@127.0.0.1"),
