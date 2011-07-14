@@ -14,6 +14,14 @@
 -spec main([string()]) -> none().
 main(Args) ->
   application:start(riaknostic),
+  case net_kernel:start([riaknostic, longnames]) of
+    {ok, _} ->
+      ok;
+    {error, {already_started, _}} ->
+      ok;
+    {error, Reason} ->
+      throw({name_error, Reason})
+  end,
   Opts = riaknostic_opts:parse(Args),
   run(Opts).
 

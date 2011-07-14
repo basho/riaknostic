@@ -15,7 +15,7 @@ This will compile and package Riaknostic into a Erlang shell script.
 
 Riaknostic is executed as so:
 
-    ./riaknostic -name <node_name> -setcookie <riak_cluster_cookie> -dir <riak_node_dir>
+    ./riaknostic -setcookie <riak_cluster_cookie> -dir <riak_node_dir>
 
 ## TODO
 
