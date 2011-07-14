@@ -11,7 +11,7 @@
 -type reason() :: any().
 -type error() :: {error(), reason()}.
 
--spec main(list()) -> none().
+-spec main([string()]) -> none().
 main(Args) ->
   application:start(riaknostic),
   Opts = riaknostic_opts:parse(Args),
@@ -36,12 +36,12 @@ run(Opts) ->
       throw("Riak logs not found.")
   end,
 
-  Stats = case ping_riak() of
+  {Node, Stats} = case ping_riak() of
     {error, unreachable} ->
       io:format("Can't reach the local Riak instance. Skipping stats.~n");
-    Node ->
+    RNode ->
       io:format("Fetching riak data...~n"),
-      RStats = fetch_riak_stats(Node),
+      RStats = fetch_riak_stats(RNode),
       lists:foreach(fun(Stat) ->
         case Stat of
           {sys_otp_release, Release} ->
@@ -50,10 +50,13 @@ run(Opts) ->
             ok
         end
       end, RStats),
-      RStats
+     {RNode, RStats}
   end,
 
-  Config = dict:from_list([{riak_home, Dir}, {riak_logs, LogDirs}, {riak_stats, Stats}]),
+  Config = dict:from_list([ {riak_node, Node},
+                            {riak_home, Dir},
+                            {riak_logs, LogDirs},
+                            {riak_stats, Stats} ]),
 
   {ok, Modules} = application:get_env(riaknostic, riaknostics),
   Runner = fun(Module) ->
