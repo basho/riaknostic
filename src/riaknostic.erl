@@ -68,6 +68,7 @@ run(Opts) ->
 
   {ok, Modules} = application:get_env(riaknostic, riaknostics),
   Runner = fun(Module) ->
+    io:format("~n=========== ~p ===========~n", [Module]),
     Module:handle_command(Config)
   end,
 
