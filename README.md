@@ -19,6 +19,5 @@ Riaknostic is executed as so:
 
 ## TODO
 
-- OPT-ize
 - More riaknostics
 - Reconsider how riaknostic modules are packaged
