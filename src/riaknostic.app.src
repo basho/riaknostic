@@ -19,6 +19,7 @@
                 riaknostic_ring_size_partitions,
                 riaknostic_check_dumps,
                 riaknostic_nodes_connected,
+                riaknostic_check_bitcask,
                 riaknostic_disk_check
               ]
     },
@@ -29,6 +30,7 @@
                     riaknostic_ring_size_partitions,
                     riaknostic_check_dumps,
                     riaknostic_nodes_connected,
+                    riaknostic_check_bitcask,
                     riaknostic_disk_check
                   ]
     }

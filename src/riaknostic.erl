@@ -64,7 +64,7 @@ run(Opts) ->
   Config = dict:from_list([ {riak_node, Node},
                             {riak_home, Dir},
                             {riak_logs, LogDirs},
-                            {riak_stats, Stats} ]),
+                            {riak_stats, Stats} | Opts ]),
 
   {ok, Modules} = application:get_env(riaknostic, riaknostics),
   Runner = fun(Module) ->
