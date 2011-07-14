@@ -18,7 +18,8 @@
                 riaknostic_ring_membership,
                 riaknostic_ring_size_partitions,
                 riaknostic_check_dumps,
-                riaknostic_nodes_connected
+                riaknostic_nodes_connected,
+                riaknostic_disk_check
               ]
     },
     {riak_homes, ["/usr/lib64/riak", "/opt/riak"]},
@@ -27,7 +28,8 @@
                     riaknostic_ring_membership,
                     riaknostic_ring_size_partitions,
                     riaknostic_check_dumps,
-                    riaknostic_nodes_connected
+                    riaknostic_nodes_connected,
+                    riaknostic_disk_check
                   ]
     }
   ]}
