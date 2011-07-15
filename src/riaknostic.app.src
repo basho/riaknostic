@@ -13,6 +13,7 @@
 
                 riaknostic,
                 riaknostic_opts,
+                riaknostic_util,
 
                 riaknostic_ring_membership,
                 riaknostic_ring_size_partitions,

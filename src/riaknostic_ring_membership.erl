@@ -1,7 +1,7 @@
 -module(riaknostic_ring_membership).
--export([handle_command/1]).
+-export([run/1]).
 
-handle_command(Config) ->
+run(Config) ->
   Stats = dict:fetch(riak_stats, Config),
   {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
   {nodename, NodeName} = lists:keyfind(nodename, 1, Stats),
@@ -12,4 +12,3 @@ handle_command(Config) ->
       "no"
   end]),
   ok.
-

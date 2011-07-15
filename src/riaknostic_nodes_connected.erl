@@ -1,7 +1,7 @@
 -module(riaknostic_nodes_connected).
--export([handle_command/1]).
+-export([run/1]).
 
-handle_command(Config) ->
+run(Config) ->
   Stats = dict:fetch(riak_stats, Config),
   
   {connected_nodes, ConnectedNodes} = lists:keyfind(connected_nodes, 1, Stats),

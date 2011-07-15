@@ -27,6 +27,8 @@ main(Args) ->
 
 -spec run(opt_list()) -> none().
 run(Opts) ->
+  io:format("~n=========== riaknostic_startup ===========~n~n"),
+  
   SearchDirs = proplists:get_value(dirs, Opts, application:get_env(riaknostic, riak_homes)),
   Dir = case find_riak(SearchDirs) of
     {found, RDir} ->
@@ -68,11 +70,12 @@ run(Opts) ->
 
   {ok, Modules} = application:get_env(riaknostic, riaknostics),
   Runner = fun(Module) ->
-    io:format("~n=========== ~p ===========~n", [Module]),
-    Module:handle_command(Config)
+    io:format("~n=========== ~p ===========~n~n", [Module]),
+    Module:run(Config)
   end,
 
-  lists:foreach(Runner, Modules).
+  lists:foreach(Runner, Modules),
+  io:format("~n").
 
 -spec find_riak([path()]) -> {found, path()} | not_found.
 find_riak([]) ->

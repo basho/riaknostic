@@ -1,7 +1,7 @@
 -module(riaknostic_check_bitcask).
--export([handle_command/1]).
+-export([run/1]).
 
-handle_command(Config) ->
+run(Config) ->
   Node = dict:fetch(riak_node, Config),
   RiakHome = dict:fetch(riak_home, Config),
 
@@ -12,7 +12,7 @@ handle_command(Config) ->
         false -> DataDir
       end,
 
-      io:format("The bitcask data directory is located at: ~p~n", [DataPath]),
+      io:format("Found bitcask data directories in: ~p~n", [DataPath]),
 
       case dict:find(bitcask_threshold, Config) of
         error -> undefined;
