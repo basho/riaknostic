@@ -1,15 +1,22 @@
 -module(riaknostic_ring_membership).
--export([handle_command/1]).
+-export([run/1]).
 
-handle_command(Config) ->
+run(Config) ->
   Stats = dict:fetch(riak_stats, Config),
   {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
   {nodename, NodeName} = lists:keyfind(nodename, 1, Stats),
-  io:format("Current node member of the ring? ~s~n", [case lists:member(NodeName, RingMembers) of
-    true ->
-      "yes";
-    false ->
-      "no"
-  end]),
-  ok.
 
+  MemberOfRing = case lists:member(NodeName, RingMembers) of
+    true ->
+      yes;
+    false ->
+      no
+  end,
+
+  [
+    {info, io_lib:format("Current node member of the ring? ~s", [MemberOfRing])}|
+    case MemberOfRing of
+      yes -> [];
+      no -> [{error, "Node is not a member of the ring"}]
+    end
+  ].

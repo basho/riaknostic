@@ -1,102 +1,131 @@
 -module(riaknostic).
 -export([main/1,
-         run/1,
-         find_riak/1,
-         find_riak/2,
-         find_riak_logs/1,
-         find_logs/1,
-         fetch_riak_stats/2,
-         ping_riak/0,
-         print_basic_info/1]).
+         run/1
+        ]).
 
-main(Config) ->
-  application:load(riaknostic),
-  run(Config).
+-import(riaknostic_log_server, [log/2, log/3, log_info/2, log_info/3, log_warning/2, print_log/0]).
 
-run([]) ->
-  {ok, Directories} = application:get_env(riaknostic, modules),
-  riaknostic:run(Directories);
-run(Directories) ->
-  Config = dict:new(),
-  Config1 = find_riak(Config, [{Dir, [Dir ++ "/libexec/releases/", Dir ++ "/releases/"]} || Dir <- Directories]),
+-type opt() :: {atom(), any()}.
+-type opt_list() :: [opt()].
 
-  Config2 = find_logs(Config1),
+-type path() :: string().
 
-  Node = riaknostic:ping_riak(),
-  Config3 = case Node of
+-type reason() :: any().
+-type error() :: {error(), reason()}.
+
+-spec main([string()]) -> none().
+main(Args) ->
+  application:start(riaknostic),
+  case net_kernel:start([riaknostic, longnames]) of
+    {ok, _} ->
+      ok;
+    {error, {already_started, _}} ->
+      ok;
+    {error, Reason} ->
+      throw({name_error, Reason})
+  end,
+  Opts = riaknostic_opts:parse(Args),
+  run(Opts).
+
+-spec run(opt_list()) -> none().
+run(Opts) ->
+  {ok, DefaultSearchDirs} = application:get_env(riaknostic, riak_homes),
+  SearchDirs = proplists:get_value(dirs, Opts, DefaultSearchDirs),
+  Dir = case find_riak(SearchDirs) of
+    {found, RDir} ->
+      log_info(riaknostic_startup, "Found Riak installation in: ~s", [RDir]),
+      RDir;
+    not_found ->
+      throw("Riak not found.")
+  end,
+
+  LogDirs = case find_riak_logs(Dir) of
+    {found, RLogDirs} ->
+      log_info(riaknostic_startup, "Found Riak's log files in: ~s", [RLogDirs]),
+      RLogDirs;
+    not_found ->
+      throw("Riak logs not found.")
+  end,
+
+  {Node, Stats} = case ping_riak() of
     {error, unreachable} ->
-      io:format("Can't reach the local Riak instance. Skipping stats.~n"),
-      dict:store(riak_stats, [], Config2);
-    _ ->
-      riaknostic:fetch_riak_stats(Config2, Node)
+      log_warning(riaknostic_startup, "Can't reach the local Riak instance. Skipping stats.");
+    RNode ->
+      RStats = fetch_riak_stats(RNode),
+      lists:foreach(fun(Stat) ->
+        case Stat of
+          {sys_otp_release, Release} ->
+            log_info(riaknostic_startup, "Erlang release: ~s", [Release]);
+          _ ->
+            ok
+        end
+      end, RStats),
+     {RNode, RStats}
   end,
 
-  riaknostic:print_basic_info(dict:fetch(riak_stats, Config3)),
-  application:start(riaknostic, permanent),
+  Config = dict:from_list([ {riak_node, Node},
+                            {riak_home, Dir},
+                            {riak_logs, LogDirs},
+                            {riak_stats, Stats} | Opts ]),
 
-  {ok, Modules} = application:get_env(riaknostic, modules),
-  Runner = fun(ModuleName) ->
-    Module = list_to_atom("riaknostic_" ++ ModuleName),
-    Module:handle_command(Config3)
-  end,
+  {ok, Modules} = application:get_env(riaknostic, riaknostics),
 
-  lists:foreach(Runner, Modules).
-
-find_riak([]) ->
-  [];
-find_riak([{Dir, ReleaseDirs}|Directories]) ->
-  case lists:any(fun(ReleaseDir) ->
-                   filelib:is_file(ReleaseDir ++ "start_erl.data")
-               end, ReleaseDirs) of
-    true ->
-      io:format("Found Riak installation in: ~s~n", [Dir]),
-      Dir;
-    false ->
-      find_riak(Directories)
-  end.
-find_riak(Config, Directories) ->
-  Dir = find_riak(Directories),
-  dict:store(riak_home, Dir, Config).
-
-find_riak_logs([]) ->
-  false;
-find_riak_logs([Dir|Directories]) ->
-  case filelib:is_dir(Dir) of
-    true ->
-      Dir;
-    false ->
-      find_riak_logs(Directories)
-  end.
-
-find_logs(Config) ->
-  RiakHome = dict:fetch(riak_home, Config),
-  Directories = [RiakHome ++ "/../log", RiakHome ++ "/log", RiakHome ++ "/libexec/log", "/var/log/riak", "/opt/log/riak"],
-  RiakLogs = find_riak_logs(Directories),
-  io:format("Found Riak's log files in: ~s~n", [RiakLogs]),
-  dict:store(riak_logs, RiakHome, Config).
-
-fetch_riak_stats(Config, Node) ->
-  io:format("Fetching riak data...~n"),
-  Stats = rpc:call(Node, riak_kv_stat, get_stats, []),
-  dict:store(riak_stats, Stats, Config).
- 
-ping_riak() ->
-  Ping = net_adm:ping('riaksearch@127.0.0.1'),
-  case Ping of
-    pang ->
-      io:format("Couldn't reach the local Riak node.~n"),
-      Node = {error, unreachable};
-    pong ->
-      [Node|_] = nodes()
-  end,
-  Node.
-
-print_basic_info(RiakData) ->
-  lists:foreach(fun(Stat) ->
-    case Stat of
-      {sys_otp_release, Release} ->
-        io:format("Erlang release: ~s~n", [Release]);
+  Runner = fun(Module) ->
+    case Module:run(Config) of
+      [{_Type, _Msg}|_Rest] = Msgs ->
+        log(Module, Msgs);
       _ ->
         ok
     end
-  end, RiakData).
+  end,
+
+  lists:foreach(Runner, Modules),
+
+  print_log().
+
+-spec find_riak([path()]) -> {found, path()} | not_found.
+find_riak([]) ->
+  not_found;
+
+find_riak([Dir | Rest]) ->
+  case lists:any(fun(ReleaseDir) ->
+    filelib:is_file(Dir ++ ReleaseDir ++ "start_erl.data")
+  end, ["/libexec/releases/", "/releases/"]) of
+    true ->
+      {found, Dir};
+    false ->
+      find_riak(Rest)
+  end.
+
+-spec find_riak_logs([path()]) -> {found, [path(),...]} | not_found.
+find_riak_logs(RiakDir) ->
+  {ok, RiakLogHomes} = application:get_env(riaknostic, riak_log_homes),
+  PossibleLogDirs = lists:map(fun(LogDir) ->
+    re:replace(LogDir, "\\$riak_home", RiakDir, [{return,list}])
+  end, RiakLogHomes),
+
+  LogDirs = lists:filter(fun(PossibleLogDir) ->
+     filelib:is_file(PossibleLogDir)
+  end, PossibleLogDirs),
+
+  case LogDirs =:= [] of
+    true ->
+      not_found;
+    false ->
+      {found, LogDirs}
+  end.
+
+-spec fetch_riak_stats(node()) -> any().
+fetch_riak_stats(Node) -> 
+  rpc:call(Node, riak_kv_stat, get_stats, []).
+
+-spec ping_riak() -> node() | error().
+ping_riak() ->
+  { ok, [ { NodeSName, _ } | _ ] } = net_adm:names(),
+  Node = list_to_atom(NodeSName ++ "@127.0.0.1"),
+  case net_adm:ping(Node) of
+    pang ->
+      {error, unreachable};
+    pong ->
+      Node
+  end.

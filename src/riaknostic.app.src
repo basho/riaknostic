@@ -9,7 +9,34 @@
                  ]},
   {mod, { riaknostic_app, []}},
   {env, [
-    {modules, ["ring_membership", "ring_size_partitions", "check_dumps", "nodes_connected"]},
-    {riak_homes, ["/usr/lib64/riak", "/opt/riak"]}
+    {modules, [ riaknostic_app,
+                riaknostic_sup,
+
+                riaknostic,
+                riaknostic_opts,
+                riaknostic_util,
+                riaknostic_log_server,
+
+                riaknostic_ring_membership,
+                riaknostic_ring_size_partitions,
+                riaknostic_check_dumps,
+                riaknostic_nodes_connected,
+                riaknostic_memory_use,
+                riaknostic_check_bitcask,
+                riaknostic_disk_check
+              ]
+    },
+    {riak_homes, ["/usr/lib64/riak", "/opt/riak"]},
+    {riak_log_homes, ["$riak_home/../log", "$riak_home/log", "$riak_home/libexec/log", "/var/log/riak", "/opt/log/riak"]},
+    {riaknostics, [
+                    riaknostic_ring_membership,
+                    riaknostic_ring_size_partitions,
+                    riaknostic_check_dumps,
+                    riaknostic_memory_use,
+                    riaknostic_nodes_connected,
+                    riaknostic_check_bitcask,
+                    riaknostic_disk_check
+                  ]
+    }
   ]}
  ]}.
