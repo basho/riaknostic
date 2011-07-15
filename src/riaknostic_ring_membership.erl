@@ -5,10 +5,17 @@ run(Config) ->
   Stats = dict:fetch(riak_stats, Config),
   {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
   {nodename, NodeName} = lists:keyfind(nodename, 1, Stats),
-  io:format("Current node member of the ring? ~s~n", [case lists:member(NodeName, RingMembers) of
+
+  MemberOfRing = case lists:member(NodeName, RingMembers) of
     true ->
-      "yes";
+      yes;
     false ->
-      "no"
-  end]),
-  ok.
+      no
+  end,
+
+  io:format("Current node member of the ring? ~s~n", [MemberOfRing]),
+
+  case MemberOfRing of
+    yes -> ok;
+    no -> [{error, "Node is not a member of the ring"}]
+  end.

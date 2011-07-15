@@ -7,9 +7,13 @@ run(Config) ->
   {ring_num_partitions, NumPartitions} = lists:keyfind(ring_num_partitions, 1, Stats),
   case RingSize == NumPartitions of
     true ->
-      io:format("Ring creation size same as number of partitions? yes~n");
+      io:format("Ring creation size same as number of partitions? yes~n"),
+      ok;
     false ->
-      io:format("The ring_creation size value (~B) is not equal to the number of partitions (~B)~n", [RingSize,
-          NumPartitions])
-  end,
-  ok.
+      Msg = io_lib:format(
+        "The ring_creation size value (~B) is not equal to the number of partitions (~B)~n",
+        [RingSize, NumPartitions]
+      ),
+      io:format(Msg),
+      [{warning, Msg}]
+  end.

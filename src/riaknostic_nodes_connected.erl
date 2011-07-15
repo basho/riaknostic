@@ -3,7 +3,7 @@
 
 run(Config) ->
   Stats = dict:fetch(riak_stats, Config),
-  
+
   {connected_nodes, ConnectedNodes} = lists:keyfind(connected_nodes, 1, Stats),
   {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
   {nodename, NodeName} = lists:keyfind(nodename, 1, Stats),
@@ -20,11 +20,15 @@ run(Config) ->
           false
     end
   end, RingMembers),
-  
+
   io:format("All nodes in ring connected? ~p~n", [
     case AllNodesInRingConnected of
       true -> yes;
       false -> no
     end
   ]),
-  ok.
+
+  case AllNodesInRingConnected of
+    true -> ok;
+    false -> [{ error, "Node not connected to all nodes in ring." }]
+  end.

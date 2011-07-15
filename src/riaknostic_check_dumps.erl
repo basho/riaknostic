@@ -3,10 +3,21 @@
 
 run(Config) ->
   RiakLogs = dict:fetch(riak_logs, Config),
-  io:format("Crash dump file present? ~s~n", [case filelib:is_file(RiakLogs ++ "/erl_crash.dump") of
+  DumpPresent = case filelib:is_file(RiakLogs ++ "/erl_crash.dump") of
     true ->
-      "yes";
+      yes;
     false ->
-      "no"
-  end]),
-  ok.
+      no
+  end,
+
+  io:format("Crash dump file present? ~s~n", [DumpPresent]),
+
+  case DumpPresent of
+    no ->
+      ok;
+    yes ->
+      {
+        warning,
+        io_lib:format("Crash dump present at ~s/erl_crash.dump", [RiakLogs])
+      }
+  end.

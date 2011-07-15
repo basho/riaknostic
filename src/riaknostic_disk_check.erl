@@ -5,14 +5,33 @@ run(Config) ->
   Stats = dict:fetch(riak_stats, Config),
   {disk, DiskDatum} = lists:keyfind(disk, 1, Stats),
 
-  lists:foreach(fun({Path, Capacity, Usage}) -> 
+  lists:foldl(fun({Path, Capacity, Usage}, Acc) ->
+    Noatime = is_noatime(Path),
     io:format(
       "Disk mounted at ~p is ~p% full (~p KB / ~p KB) with noatime ~p~n",
-      [Path, Usage, Capacity * Usage * 0.01, Capacity, is_noatime(Path)]
-    )
-  end, DiskDatum),
+      [Path, Usage, Capacity * Usage * 0.01, Capacity, Noatime]
+    ),
 
-  ok.
+    Acc1 = case Usage >= 90 of
+      false ->
+        Acc;
+      true ->
+        [{
+          warning,
+          io_lib:format("Disk mounted at ~p is ~p% full", [Path, Usage])
+        } | Acc]
+    end,
+
+    case Noatime of
+      on ->
+        Acc1;
+      off ->
+        [{
+          warning,
+          io_lib:format("Disk mounted at ~p has noatime off", [Path])
+        } | Acc1]
+    end
+  end, [], DiskDatum).
 
 is_noatime(MountPoint) ->
   Ouput = riaknostic_util:run_command("mount | grep -P ' on " ++ MountPoint ++ " '"),
