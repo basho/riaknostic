@@ -12,14 +12,14 @@ run(Config) ->
         false -> DataDir
       end,
 
-      io:format("Found bitcask data directories in: ~p~n", [DataPath]),
+      InfoMsg = {info, io_lib:format("Found bitcask data directories in: ~p", [DataPath])},
 
-      case dict:find(bitcask_threshold, Config) of
-        error -> ok;
+      [InfoMsg | case dict:find(bitcask_threshold, Config) of
+        error -> [];
         {ok, ThresholdSize} ->
           true = code:add_path(RiakHome ++ "/lib/bitcask-1.1.6/ebin/"),
           find_bitcask_large_values(DataPath, ThresholdSize)
-      end;
+      end];
     _ -> ok
   end.
 
@@ -27,15 +27,16 @@ find_bitcask_large_values(DataDir, ThresholdSize) ->
   {ok, Dirs} = file:list_dir(DataDir),
 
   lists:foldl(fun(Dir, Acc) ->
-    io:format("---> ~p\n", [Dir]),
     F = fun(K, V, Acc1) ->
       Vsize = size(V),
       case Vsize > ThresholdSize of
         true ->
-          io:format("~w\t~120p\n", [Vsize, K]),
           [{
             warning,
-            io_lib:format("Bitcask object ~s (~w) over threshold ~w", [K, Vsize, ThresholdSize])
+            io_lib:format(
+              "Bitcask object ~s (~wB) in ~s over threshold ~w",
+              [K, Vsize, Dir, ThresholdSize]
+            )
           } | Acc1];
         false ->
           Acc1
@@ -43,11 +44,9 @@ find_bitcask_large_values(DataDir, ThresholdSize) ->
     end,
 
     Ref = bitcask:open(DataDir ++ "/" ++ Dir),
-    Messages = bitcask:fold(Ref, F, []),
+    Messages = [{info, io_lib:format("Checking bitcask directory: ~s", [Dir])}
+      | bitcask:fold(Ref, F, [])],
     bitcask:close(Ref),
 
-    case Messages of
-      [] -> Acc;
-      _ -> lists:append(Messages, Acc)
-    end
+    lists:append(Messages, Acc)
   end, [], Dirs).

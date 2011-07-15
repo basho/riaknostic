@@ -10,10 +10,12 @@
   {mod, { riaknostic_app, []}},
   {env, [
     {modules, [ riaknostic_app,
+                riaknostic_sup,
 
                 riaknostic,
                 riaknostic_opts,
                 riaknostic_util,
+                riaknostic_log_server,
 
                 riaknostic_ring_membership,
                 riaknostic_ring_size_partitions,

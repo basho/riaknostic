@@ -3,6 +3,8 @@
          run/1
         ]).
 
+-import(riaknostic_log_server, [log/2, log/3, log_info/2, log_info/3, log_warning/2, print_log/0]).
+
 -type opt() :: {atom(), any()}.
 -type opt_list() :: [opt()].
 
@@ -27,12 +29,11 @@ main(Args) ->
 
 -spec run(opt_list()) -> none().
 run(Opts) ->
-  io:format("~n=========== riaknostic_startup ===========~n~n"),
-
-  SearchDirs = proplists:get_value(dirs, Opts, application:get_env(riaknostic, riak_homes)),
+  {ok, DefaultSearchDirs} = application:get_env(riaknostic, riak_homes),
+  SearchDirs = proplists:get_value(dirs, Opts, DefaultSearchDirs),
   Dir = case find_riak(SearchDirs) of
     {found, RDir} ->
-      io:format("Found Riak installation in: ~s~n", [RDir]),
+      log_info(riaknostic_startup, "Found Riak installation in: ~s", [RDir]),
       RDir;
     not_found ->
       throw("Riak not found.")
@@ -40,7 +41,7 @@ run(Opts) ->
 
   LogDirs = case find_riak_logs(Dir) of
     {found, RLogDirs} ->
-      io:format("Found Riak's log files in: ~s~n", [RLogDirs]),
+      log_info(riaknostic_startup, "Found Riak's log files in: ~s", [RLogDirs]),
       RLogDirs;
     not_found ->
       throw("Riak logs not found.")
@@ -48,14 +49,13 @@ run(Opts) ->
 
   {Node, Stats} = case ping_riak() of
     {error, unreachable} ->
-      io:format("Can't reach the local Riak instance. Skipping stats.~n");
+      log_warning(riaknostic_startup, "Can't reach the local Riak instance. Skipping stats.");
     RNode ->
-      io:format("Fetching riak data...~n"),
       RStats = fetch_riak_stats(RNode),
       lists:foreach(fun(Stat) ->
         case Stat of
           {sys_otp_release, Release} ->
-            io:format("Erlang release: ~s~n", [Release]);
+            log_info(riaknostic_startup, "Erlang release: ~s", [Release]);
           _ ->
             ok
         end
@@ -69,24 +69,19 @@ run(Opts) ->
                             {riak_stats, Stats} | Opts ]),
 
   {ok, Modules} = application:get_env(riaknostic, riaknostics),
-  Runner = fun(Module, Acc) ->
-    io:format("~n=========== ~p ===========~n~n", [Module]),
+
+  Runner = fun(Module) ->
     case Module:run(Config) of
       [{_Type, _Msg}|_Rest] = Msgs ->
-        Msgs ++ Acc;
+        log(Module, Msgs);
       _ ->
-        Acc
+        ok
     end
   end,
 
-  Messages = lists:reverse(lists:foldl(Runner, [], Modules)),
+  lists:foreach(Runner, Modules),
 
-  io:format("~n=========== Warnings and Errors ===========~n~n"),
-  lists:foreach(fun({Type, Msg}) ->
-    io:format("~s: ~s~n", [Type, Msg])
-  end, Messages),
-
-  io:format("~n").
+  print_log().
 
 -spec find_riak([path()]) -> {found, path()} | not_found.
 find_riak([]) ->

@@ -10,14 +10,15 @@ run(Config) ->
       no
   end,
 
-  io:format("Crash dump file present? ~s~n", [DumpPresent]),
-
-  case DumpPresent of
-    no ->
-      ok;
-    yes ->
-      {
-        warning,
-        io_lib:format("Crash dump present at ~s/erl_crash.dump", [RiakLogs])
-      }
-  end.
+  [
+    {info, io_lib:format("Crash dump file present? ~s", [DumpPresent])} |
+    case DumpPresent of
+      no ->
+        [];
+      yes ->
+        {
+          warning,
+          io_lib:format("Crash dump present at ~s/erl_crash.dump", [RiakLogs])
+        }
+    end
+  ].

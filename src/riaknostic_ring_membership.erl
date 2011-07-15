@@ -13,9 +13,10 @@ run(Config) ->
       no
   end,
 
-  io:format("Current node member of the ring? ~s~n", [MemberOfRing]),
-
-  case MemberOfRing of
-    yes -> ok;
-    no -> [{error, "Node is not a member of the ring"}]
-  end.
+  [
+    {info, io_lib:format("Current node member of the ring? ~s", [MemberOfRing])}|
+    case MemberOfRing of
+      yes -> [];
+      no -> [{error, "Node is not a member of the ring"}]
+    end
+  ].

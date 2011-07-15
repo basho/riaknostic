@@ -7,10 +7,11 @@ run(Config) ->
 
   lists:foldl(fun({Path, Capacity, Usage}, Acc) ->
     Noatime = is_noatime(Path),
-    io:format(
-      "Disk mounted at ~p is ~p% full (~p KB / ~p KB) with noatime ~p~n",
+
+    InfoMsg = {info, io_lib:format(
+      "Disk mounted at ~p is ~p% full (~p KB / ~p KB) with noatime ~p",
       [Path, Usage, Capacity * Usage * 0.01, Capacity, Noatime]
-    ),
+    )},
 
     Acc1 = case Usage >= 90 of
       false ->
@@ -22,7 +23,7 @@ run(Config) ->
         } | Acc]
     end,
 
-    case Noatime of
+    [InfoMsg | case Noatime of
       on ->
         Acc1;
       off ->
@@ -30,7 +31,7 @@ run(Config) ->
           warning,
           io_lib:format("Disk mounted at ~p has noatime off", [Path])
         } | Acc1]
-    end
+    end]
   end, [], DiskDatum).
 
 is_noatime(MountPoint) ->

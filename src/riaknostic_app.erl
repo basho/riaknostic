@@ -10,7 +10,7 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-  {ok, self()}.
+  riaknostic_sup:start_link().
 
 stop(_State) ->
   ok.
