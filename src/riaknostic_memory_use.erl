@@ -1,18 +1,16 @@
 -module(riaknostic_memory_use).
--export([run/1]).
+-export([run/2]).
 
-run(Config) ->
+run(Config, Log) ->
   Stats = dict:fetch(riak_stats, Config),
   {mem_total, MemTotal} = lists:keyfind(mem_total, 1, Stats),
   {mem_allocated, MemAllocated} = lists:keyfind(mem_allocated, 1, Stats),
 
-  InfoMsg1 = {
+  Log({
     info,
-    io_lib:format(
-      "Erlang VM has allocated ~p KB of ~p KB",
-      [MemAllocated div 1024, MemTotal div 1024]
-    )
-  },
+    "Erlang VM has allocated ~p KB of ~p KB",
+    [MemAllocated div 1024, MemTotal div 1024]
+  }),
 
   RiakHome = dict:fetch(riak_home, Config),
   Output = riaknostic_util:run_command(
@@ -20,22 +18,17 @@ run(Config) ->
   ),
   [_, Percent, RealSize | _] = re:split(Output, "[ ]+"),
 
-  InfoMsg2 = {
+  Log({
     info,
-    io_lib:format(
-      "The beam process is using ~s% of the total memory and ~s KB real memory.~n",
-      [Percent, RealSize]
-    )
-  },
+    "The beam process is using ~s% of the total memory and ~s KB real memory.",
+    [Percent, RealSize]
+  }),
 
-  [InfoMsg1, InfoMsg2 | case Percent >= 90 of
+  case Percent >= 90 of
     false ->
-      [];
+      ok;
     true ->
-      [{
-        warning,
-        io_lib:format("Beam memory usage is at ~w%", [Percent])
-      }]
-  end].
+      Log({warning, "Beam memory usage is at ~s%", [Percent]})
+  end.
 
 

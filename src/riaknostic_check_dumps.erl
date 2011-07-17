@@ -1,24 +1,11 @@
 -module(riaknostic_check_dumps).
--export([run/1]).
+-export([run/2]).
 
-run(Config) ->
+run(Config, Log) ->
   RiakLogs = dict:fetch(riak_logs, Config),
-  DumpPresent = case filelib:is_file(RiakLogs ++ "/erl_crash.dump") of
+  case filelib:is_file(RiakLogs ++ "/erl_crash.dump") of
     true ->
-      yes;
+      Log({warning, "Crash dump present at ~s/erl_crash.dump", [RiakLogs]});
     false ->
-      no
-  end,
-
-  [
-    {info, io_lib:format("Crash dump file present? ~s", [DumpPresent])} |
-    case DumpPresent of
-      no ->
-        [];
-      yes ->
-        {
-          warning,
-          io_lib:format("Crash dump present at ~s/erl_crash.dump", [RiakLogs])
-        }
-    end
-  ].
+      Log({info, "No crash dump present."})
+  end.

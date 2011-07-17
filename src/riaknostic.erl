@@ -71,12 +71,13 @@ run(Opts) ->
   {ok, Modules} = application:get_env(riaknostic, riaknostics),
 
   Runner = fun(Module) ->
-    case Module:run(Config) of
-      [{_Type, _Msg}|_Rest] = Msgs ->
-        log(Module, Msgs);
-      _ ->
-        ok
-    end
+    Logger = fun
+      ({MsgType, Msg, Data}) ->
+        log(Module, {MsgType, Msg}, Data);
+      ({MsgType, Msg}) ->
+        log(Module, {MsgType, Msg})
+    end,
+    Module:run(Config, Logger)
   end,
 
   lists:foreach(Runner, Modules),
