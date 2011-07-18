@@ -24,7 +24,7 @@ run(Config, Log) ->
     [Percent, RealSize]
   }),
 
-  case Percent >= 90 of
+  case riaknostic_util:binary_to_float(Percent) >= 90 of
     false ->
       ok;
     true ->

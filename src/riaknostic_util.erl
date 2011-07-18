@@ -25,3 +25,6 @@ run_command(Command) ->
       port_close(Port),
       StdOut
   end.
+
+binary_to_float(Bin) ->
+  list_to_float(binary_to_list(Bin)).
