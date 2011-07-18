@@ -16,7 +16,7 @@
 start_link() -> gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 log(Source, [{_Type, _Msg}|_Rest] = Msgs) ->
-    gen_server:cast(?MODULE, {log, {Source, Msgs}});
+  gen_server:cast(?MODULE, {log, {Source, Msgs}});
 log(Source, {_Type, _Msg} = MsgTuple) ->
   log(Source, [MsgTuple]).
 

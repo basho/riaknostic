@@ -52,15 +52,11 @@ run(Opts) ->
       log_warning(riaknostic_startup, "Can't reach the local Riak instance. Skipping stats.");
     RNode ->
       RStats = fetch_riak_stats(RNode),
-      lists:foreach(fun(Stat) ->
-        case Stat of
-          {sys_otp_release, Release} ->
-            log_info(riaknostic_startup, "Erlang release: ~s", [Release]);
-          _ ->
-            ok
-        end
-      end, RStats),
-     {RNode, RStats}
+
+      {sys_otp_release, Release} = lists:keyfind(sys_otp_release, 1, RStats),
+      log_info(riaknostic_startup, "Erlang release: ~s", [Release]),
+
+      {RNode, RStats}
   end,
 
   Config = dict:from_list([ {riak_node, Node},
