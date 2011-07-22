@@ -28,6 +28,7 @@
     },
     {riak_homes, ["/usr/lib64/riak", "/opt/riak"]},
     {riak_log_homes, ["$riak_home/../log", "$riak_home/log", "$riak_home/libexec/log", "/var/log/riak", "/opt/log/riak"]},
+    {riak_vm_args_homes, ["$riak_home/etc", "/etc/riak"]},
     {riaknostics, [
                     riaknostic_ring_membership,
                     riaknostic_ring_size_partitions,

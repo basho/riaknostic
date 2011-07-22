@@ -1,7 +1,7 @@
 -module(riaknostic_util).
 -compile(export_all).
 
-set_node_node(Name) ->
+set_node_name(Name) ->
   case net_kernel:start([Name, longnames]) of
     {ok, _} ->
       ok;
