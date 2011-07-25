@@ -3,8 +3,6 @@
          run/1
         ]).
 
--import(riaknostic_log_server, [log/2, log/3, log_info/2, log_info/3, log_warning/2, print_log/0]).
-
 -type opt() :: {atom(), any()}.
 -type opt_list() :: [opt()].
 
@@ -16,10 +14,28 @@
 -spec main([string()]) -> none().
 main(Args) ->
   riaknostic_util:set_node_name('riaknostic@127.0.0.1'),
+
   application:start(lager),
-  application:start(riaknostic),
+  application:load(riaknostic),
+
   Opts = riaknostic_opts:parse(Args),
-  run(Opts).
+
+  {ok, Modules} = application:get_env(riaknostic, modules),
+
+  lists:foldl(fun(Mod, Config) ->
+    Exports = Mod:module_info(exports),
+    case lists:keyfind(run, 1, Exports) =:= {run,1} of
+      false ->
+        Config;
+      true ->
+        case Result = Mod:run(Config) of
+          [{_,_} | _] ->
+            Result;
+          _ ->
+            Config
+        end
+    end
+  end, Opts, Modules).
 
 -spec run(opt_list()) -> none().
 run(Opts) ->
@@ -32,6 +48,8 @@ run(Opts) ->
     not_found ->
       throw("Riak not found.")
   end,
+
+  add_riak_lib_to_path(Dir),
 
   LogDirs = case find_riak_logs(Dir) of
     {found, RLogDirs} ->
@@ -63,18 +81,10 @@ run(Opts) ->
       RStats
   end,
 
-  Config = dict:from_list([ {riak_node, NodeName},
-                            {riak_home, Dir},
-                            {riak_logs, LogDirs},
-                            {riak_stats, Stats} | Opts ]),
-
-  {ok, Modules} = application:get_env(riaknostic, riaknostics),
-
-  Runner = fun(Module) ->
-    Module:run(Config)
-  end,
-
-  lists:foreach(Runner, Modules).
+  [ {riak_node, NodeName},
+    {riak_home, Dir},
+    {riak_logs, LogDirs},
+    {riak_stats, Stats} | Opts ].
 
 -spec find_riak([path()]) -> {found, path()} | not_found.
 find_riak([]) ->
@@ -108,6 +118,7 @@ find_riak_logs(RiakDir) ->
       {found, LogDirs}
   end.
 
+-spec load_vm_args(path()) -> none().
 load_vm_args(RiakPath) ->
   {ok, VmArgsHomes} = application:get_env(riaknostic, riak_vm_args_homes),
 
@@ -127,6 +138,7 @@ load_vm_args(RiakPath) ->
       [{node_name, binary_to_atom(NodeName, latin1)}, {cookie, binary_to_atom(Cookie, latin1)}]
   end.
 
+-spec find_vm_args([path()], path()) -> {found, path()} | not_found.
 find_vm_args([], _) ->
   not_found;
 
@@ -151,3 +163,9 @@ ping_riak(Node) ->
     pong ->
       ok
   end.
+
+-spec add_riak_lib_to_path(path()) -> none().
+add_riak_lib_to_path(RiakPath) ->
+  lists:foreach(fun(EBin) ->
+    code:add_path(EBin)
+  end ,filelib:wildcard(RiakPath ++ "/lib/*/ebin/")).

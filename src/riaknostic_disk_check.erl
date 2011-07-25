@@ -2,7 +2,7 @@
 -export([run/1]).
 
 run(Config) ->
-  Stats = dict:fetch(riak_stats, Config),
+  {riak_stats, Stats} = lists:keyfind(riak_stats, 1, Config),
   {disk, DiskDatum} = lists:keyfind(disk, 1, Stats),
 
   lists:foreach(fun({Path, Capacity, Usage}) ->

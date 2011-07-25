@@ -2,7 +2,7 @@
 -export([run/1]).
 
 run(Config) ->
-  Stats = dict:fetch(riak_stats, Config),
+  {riak_stats, Stats} = lists:keyfind(riak_stats, 1, Config),
   {ring_creation_size, RingSize} = lists:keyfind(ring_creation_size, 1, Stats),
   {ring_num_partitions, NumPartitions} = lists:keyfind(ring_num_partitions, 1, Stats),
 

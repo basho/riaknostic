@@ -2,8 +2,8 @@
 -export([run/1]).
 
 run(Config) ->
-  Node = dict:fetch(riak_node, Config),
-  RiakHome = dict:fetch(riak_home, Config),
+  {riak_node, Node} = lists:keyfind(riak_node, 1, Config),
+  {riak_home, RiakHome} = lists:keyfind(riak_home, 1, Config),
 
   case rpc:call(Node, application, get_env, [bitcask, data_root]) of
     {ok, DataDir} ->
@@ -14,11 +14,11 @@ run(Config) ->
 
       lager:info("Found bitcask data directories in: ~p", [DataPath]),
 
-      case dict:find(bitcask_threshold, Config) of
-        error -> ok;
-        {ok, ThresholdSize} ->
-          true = code:add_path(RiakHome ++ "/lib/bitcask-1.1.6/ebin/"),
-          find_bitcask_large_values(DataPath, ThresholdSize)
+      case lists:keyfind(bitcask_threshold, 1, Config) of
+        false -> ok;
+        {bitcask_threshold, ThresholdSize} ->
+
+        find_bitcask_large_values(DataPath, ThresholdSize)
       end;
     _ -> ok
   end.

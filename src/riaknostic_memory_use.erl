@@ -2,7 +2,7 @@
 -export([run/1]).
 
 run(Config) ->
-  Stats = dict:fetch(riak_stats, Config),
+  {riak_stats, Stats} = lists:keyfind(riak_stats, 1, Config),
   {mem_total, MemTotal} = lists:keyfind(mem_total, 1, Stats),
   {mem_allocated, MemAllocated} = lists:keyfind(mem_allocated, 1, Stats),
 
@@ -11,7 +11,7 @@ run(Config) ->
     [MemAllocated div 1024, MemTotal div 1024]
   ),
 
-  RiakHome = dict:fetch(riak_home, Config),
+  {riak_home, RiakHome} = lists:keyfind(riak_home, 1, Config),
   Output = riaknostic_util:run_command(
    "ps -o pmem,rss,command | grep -P 'beam' | grep -P '" ++ RiakHome ++ "'"
   ),
