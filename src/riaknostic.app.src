@@ -5,17 +5,16 @@
   {registered, []},
   {applications, [
                   kernel,
-                  stdlib
+                  stdlib,
+                  lager
                  ]},
   {mod, { riaknostic_app, []}},
   {env, [
     {modules, [ riaknostic_app,
-                riaknostic_sup,
 
                 riaknostic,
                 riaknostic_opts,
                 riaknostic_util,
-                riaknostic_log_server,
 
                 riaknostic_ring_membership,
                 riaknostic_ring_size_partitions,
@@ -38,6 +37,11 @@
                     riaknostic_check_bitcask,
                     riaknostic_disk_check
                   ]
+    },
+    {lager,
+      {handlers, [
+        {lager_console_backend, info}
+      ]}
     }
   ]}
  ]}.

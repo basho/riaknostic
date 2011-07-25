@@ -6,6 +6,7 @@ Riaknostic performs basic diagnostics on Riak nodes.
 
 To build Riaknostic execute the following commands
 
+    ./rebar get-deps
     ./rebar compile
     ./rebar escriptize
 
@@ -19,5 +20,7 @@ Riaknostic is executed as so:
 
 ## TODO
 
+- Command line options
+- Control over output verbosity
 - More riaknostics
-- Reconsider how riaknostic modules are packaged
+- Siblings check

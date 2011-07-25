@@ -1,7 +1,7 @@
 -module(riaknostic_check_bitcask).
--export([run/2]).
+-export([run/1]).
 
-run(Config, Log) ->
+run(Config) ->
   Node = dict:fetch(riak_node, Config),
   RiakHome = dict:fetch(riak_home, Config),
 
@@ -12,18 +12,18 @@ run(Config, Log) ->
         false -> DataDir
       end,
 
-      Log({info, "Found bitcask data directories in: ~p", [DataPath]}),
+      lager:info("Found bitcask data directories in: ~p", [DataPath]),
 
       case dict:find(bitcask_threshold, Config) of
         error -> ok;
         {ok, ThresholdSize} ->
           true = code:add_path(RiakHome ++ "/lib/bitcask-1.1.6/ebin/"),
-          find_bitcask_large_values(DataPath, ThresholdSize, Log)
+          find_bitcask_large_values(DataPath, ThresholdSize)
       end;
     _ -> ok
   end.
 
-find_bitcask_large_values(DataDir, ThresholdSize, Log) ->
+find_bitcask_large_values(DataDir, ThresholdSize) ->
   {ok, Dirs} = file:list_dir(DataDir),
 
   lists:foreach(fun(Dir) ->
@@ -31,18 +31,17 @@ find_bitcask_large_values(DataDir, ThresholdSize, Log) ->
       Vsize = size(V),
       case Vsize > ThresholdSize of
         true ->
-          Log({
-            warning,
+          lager:warning(
             "Bitcask object ~s (~wB) in ~s over threshold ~w",
             [K, Vsize, Dir, ThresholdSize]
-          });
+          );
         false ->
           ok
       end
     end,
 
     Ref = bitcask:open(DataDir ++ "/" ++ Dir),
-    Log({info, "Checking bitcask directory: ~s", [Dir]}),
+    lager:info("Checking bitcask directory: ~s", [Dir]),
     bitcask:fold(Ref, F, []),
     bitcask:close(Ref)
   end, Dirs).

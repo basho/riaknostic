@@ -15,8 +15,9 @@
 
 -spec main([string()]) -> none().
 main(Args) ->
-  application:start(riaknostic),
   riaknostic_util:set_node_name('riaknostic@127.0.0.1'),
+  application:start(lager),
+  application:start(riaknostic),
   Opts = riaknostic_opts:parse(Args),
   run(Opts).
 
@@ -26,7 +27,7 @@ run(Opts) ->
   SearchDirs = proplists:get_value(dirs, Opts, DefaultSearchDirs),
   Dir = case find_riak(SearchDirs) of
     {found, RDir} ->
-      log_info(riaknostic_startup, "Found Riak installation in: ~s", [RDir]),
+        lager:info("Found Riak installation in: ~s", [RDir]),
       RDir;
     not_found ->
       throw("Riak not found.")
@@ -34,30 +35,30 @@ run(Opts) ->
 
   LogDirs = case find_riak_logs(Dir) of
     {found, RLogDirs} ->
-      log_info(riaknostic_startup, "Found Riak's log files in: ~s", [RLogDirs]),
+        lager:info("Found Riak's log files in: ~s", [RLogDirs]),
       RLogDirs;
     not_found ->
       throw("Riak logs not found.")
   end,
 
-  log_info(riaknostic_startup, "Trying to load and parse vm.arg."),
+  lager:info("Trying to load and parse vm.arg."),
   VmArgs = load_vm_args(Dir),
 
   {node_name, NodeName} = lists:keyfind(node_name, 1, VmArgs),
-  log_info(riaknostic_startup, "The riak node is named \"~s\"", [NodeName]),
+  lager:info("The riak node is named \"~s\"", [NodeName]),
 
   {cookie, Cookie} = lists:keyfind(cookie, 1, VmArgs),
-  log_info(riaknostic_startup, "The riak cluster's cookie is \"~s\"", [Cookie]),
+  lager:info("The riak cluster's cookie is \"~s\"", [Cookie]),
   true = erlang:set_cookie(node(), Cookie),
 
   Stats = case ping_riak(NodeName) of
     {error, unreachable} ->
-      log_warning(riaknostic_startup, "Can't reach the local Riak instance. Skipping stats.");
+      lager:warning("Can't reach the local Riak instance. Skipping stats.");
     ok ->
       RStats = fetch_riak_stats(NodeName),
 
       {sys_otp_release, Release} = lists:keyfind(sys_otp_release, 1, RStats),
-      log_info(riaknostic_startup, "Erlang release: ~s", [Release]),
+      lager:info("Erlang release: ~s", [Release]),
 
       RStats
   end,
@@ -70,18 +71,10 @@ run(Opts) ->
   {ok, Modules} = application:get_env(riaknostic, riaknostics),
 
   Runner = fun(Module) ->
-    Logger = fun
-      ({MsgType, Msg, Data}) ->
-        log(Module, {MsgType, Msg}, Data);
-      ({MsgType, Msg}) ->
-        log(Module, {MsgType, Msg})
-    end,
-    Module:run(Config, Logger)
+    Module:run(Config)
   end,
 
-  lists:foreach(Runner, Modules),
-
-  print_log().
+  lists:foreach(Runner, Modules).
 
 -spec find_riak([path()]) -> {found, path()} | not_found.
 find_riak([]) ->

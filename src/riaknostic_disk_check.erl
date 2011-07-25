@@ -1,31 +1,30 @@
 -module(riaknostic_disk_check).
--export([run/2]).
+-export([run/1]).
 
-run(Config, Log) ->
+run(Config) ->
   Stats = dict:fetch(riak_stats, Config),
   {disk, DiskDatum} = lists:keyfind(disk, 1, Stats),
 
   lists:foreach(fun({Path, Capacity, Usage}) ->
     Noatime = is_noatime(Path),
 
-    Log({
-      info,
+    lager:info(
       "Disk mounted at ~p is ~p% full (~p KB / ~p KB) with noatime ~p",
       [Path, Usage, Capacity * Usage * 0.01, Capacity, Noatime]
-    }),
+    ),
 
     case Usage >= 90 of
       false ->
         ok;
       true ->
-        Log({warning, "Disk mounted at ~p is ~p% full", [Path, Usage]})
+        lager:warning("Disk mounted at ~p is ~p% full", [Path, Usage])
     end,
 
     case Noatime of
       on ->
         ok;
       off ->
-        Log({warning, "Disk mounted at ~p has noatime off", [Path]})
+        lager:warning("Disk mounted at ~p has noatime off", [Path])
     end
   end, DiskDatum).
 
