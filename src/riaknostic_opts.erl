@@ -9,6 +9,12 @@ parse([], Options) ->
     Fun = fun(Args) -> lists:reverse(Args) end,
     update(args, Options, [], Fun);
 
+parse(["-h"|_], _Options) ->
+    [{help, true}];
+
+parse(["-l"|_], _Options) ->
+    [{list, true}];
+
 parse(["-dir", Dir|Args], Options) ->
     Options1 = update(dirs, Options, [], fun(Dirs) -> [Dir|Dirs] end),
     parse(Args, Options1);

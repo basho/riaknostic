@@ -4,23 +4,24 @@ Riaknostic performs basic diagnostics on Riak nodes.
 
 ## Building
 
-To build Riaknostic execute the following commands
+To build Riaknostic execute the following command
 
-    ./rebar get-deps
-    ./rebar compile
-    ./rebar escriptize
+    ./rebar get-deps compile escriptize
 
 This will compile and package Riaknostic into a Erlang shell script.
 
-## Executing
+## Usage
 
-Riaknostic is executed as so:
+    riaknostic [-h] [-l] [-dir <riak directory>] [-bitcask_threshold <int>] [<module,...>]
 
-    ./riaknostic -dir <riak_node_dir> [-bitcask_threshold <threshold_size>]
+    -h                     Show the program options
+    -l                     List available riaknostic modules
+    -dir                   Specify the location of riak
+    -bitcask_threshold     The size in bytes to be considered a large value
+    module                 A diagnostic. By default, all riaknostics are run
 
 ## TODO
 
-- Command line options
 - Control over output verbosity
 - More riaknostics
 - Siblings check

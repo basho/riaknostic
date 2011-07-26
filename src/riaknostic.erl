@@ -1,7 +1,7 @@
 -module(riaknostic).
+
 -export([main/1,
-         run/1
-        ]).
+         run/1]).
 
 -type opt() :: {atom(), any()}.
 -type opt_list() :: [opt()].
@@ -14,28 +14,65 @@
 -spec main([string()]) -> none().
 main(Args) ->
   riaknostic_util:set_node_name('riaknostic@127.0.0.1'),
-
-  application:start(lager),
   application:load(riaknostic),
 
   Opts = riaknostic_opts:parse(Args),
 
-  {ok, Modules} = application:get_env(riaknostic, modules),
+  case Opts of
+    [{help, true}|_] ->
+      print_usage();
+    [{list, true}|_] ->
+      list_riaknostics();
+    _ ->
+      application:start(lager),
 
-  lists:foldl(fun(Mod, Config) ->
-    Exports = Mod:module_info(exports),
-    case lists:keyfind(run, 1, Exports) =:= {run,1} of
-      false ->
-        Config;
-      true ->
+      RiaknosticsToRun = case OptArgs = proplists:get_value(args, Opts, []) of
+        [] ->
+          get_riaknostics();
+        _ ->
+          [riaknostic |
+            [OptArgAtom ||
+              OptArg <- OptArgs,
+              lists:member(OptArgAtom = list_to_atom("riaknostic_" ++ OptArg), get_riaknostics())
+            ]
+          ]
+      end,
+
+      lists:foldl(fun(Mod, Config) ->
         case Result = Mod:run(Config) of
           [{_,_} | _] ->
             Result;
           _ ->
             Config
         end
-    end
-  end, Opts, Modules).
+      end, Opts, RiaknosticsToRun)
+  end.
+
+-spec get_riaknostics() -> [atom(),...].
+get_riaknostics() ->
+  {ok, Modules} = application:get_env(riaknostic, modules),
+  [Mod || Mod <- Modules,
+    lists:keyfind(run, 1, Mod:module_info(exports)) =:= {run,1}].
+
+-spec print_usage() -> none().
+print_usage() ->
+  io:format("Usage: riaknostic [-h] [-l] [-dir <riak directory>] [-bitcask_threshold <int>] [<module,...>]
+
+-h                     Show the program options
+-l                     List available riaknostic modules
+-dir                   Specify the location of riak
+-bitcask_threshold     The size in bytes to be considered a large value
+riaknostic             A diagnostic. By default, all riaknostics are run\n"
+  ).
+
+-spec list_riaknostics() -> none().
+list_riaknostics() ->
+  io:format("List of riaknostics:\n"),
+  [_Riaknostic | Riaknostics] = get_riaknostics(),
+  lists:foreach(fun(Riaknostic) -> 
+    Replaced = re:replace(atom_to_list(Riaknostic), "riaknostic_", ""),
+    io:format("    ~s~n", [Replaced])
+  end, Riaknostics).
 
 -spec run(opt_list()) -> none().
 run(Opts) ->
@@ -168,4 +205,4 @@ ping_riak(Node) ->
 add_riak_lib_to_path(RiakPath) ->
   lists:foreach(fun(EBin) ->
     code:add_path(EBin)
-  end ,filelib:wildcard(RiakPath ++ "/lib/*/ebin/")).
+  end, filelib:wildcard(RiakPath ++ "/lib/*/ebin/")).
