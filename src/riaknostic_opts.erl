@@ -23,6 +23,10 @@ parse(["-bitcask_threshold", Size|Args], Options) ->
     Options1 = update(bitcask_threshold, Options, [], fun(_) -> list_to_integer(Size) end),
     parse(Args, Options1);
 
+parse(["-bitcask_threshold_type", Type|Args], Options) ->
+    Options1 = update(bitcask_threshold_type, Options, [], fun(_) -> list_to_atom(Type) end),
+    parse(Args, Options1);
+
 parse([Arg|Args], Options) ->
     Fun = fun(Others) -> [Arg|Others] end,
     Options1 = update(args, Options, [], Fun),

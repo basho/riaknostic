@@ -56,14 +56,14 @@ get_riaknostics() ->
 
 -spec print_usage() -> none().
 print_usage() ->
-  io:format("Usage: riaknostic [-h] [-l] [-dir <riak directory>] [-bitcask_threshold <int>] [<module,...>]
+  io:format("Usage: riaknostic [-h] [-l] [-dir <riak directory>] [-bitcask_threshold <int> [-bitcask_threshold_type <type>]] [<module,...>]
 
--h                     Show the program options
--l                     List available riaknostic modules
--dir                   Specify the location of riak
--bitcask_threshold     The size in bytes to be considered a large value
-riaknostic             A diagnostic. By default, all riaknostics are run\n"
-  ).
+\t-h                        Show the program options
+\t-l                        List available riaknostic modules
+\t-dir                      Specify the location of riak
+\t-bitcask_threshold        The size in bytes to be considered a large value
+\t-bitcask_threshold_type   Check blob_size, sibling_count, or vclock_length
+\tmodule                    A diagnostic. By default, all riaknostics are run\n").
 
 -spec list_riaknostics() -> none().
 list_riaknostics() ->
@@ -80,10 +80,11 @@ run(Opts) ->
   SearchDirs = proplists:get_value(dirs, Opts, DefaultSearchDirs),
   Dir = case find_riak(SearchDirs) of
     {found, RDir} ->
-        lager:info("Found Riak installation in: ~s", [RDir]),
+      lager:info("Found Riak installation in: ~s", [RDir]),
       RDir;
     not_found ->
-      throw("Riak not found.")
+      lager:error("Riak not found."),
+      exit(riak_not_found)
   end,
 
   add_riak_lib_to_path(Dir),
