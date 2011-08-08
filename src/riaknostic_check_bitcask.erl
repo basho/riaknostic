@@ -39,8 +39,8 @@ find_bitcask_large_values(DataDir, ThresholdSize, ThresholdType)
       case Vsize > ThresholdSize of
         true ->
           lager:warning(
-            "Bitcask object ~s (~w) in ~s over threshold ~s of ~w",
-            [K, Vsize, Dir, ThresholdType, ThresholdSize]
+            "Bitcask object ~p (~w) in ~s over threshold ~s of ~w",
+            [binary_to_term(K), Vsize, Dir, ThresholdType, ThresholdSize]
           );
         false ->
           ok
