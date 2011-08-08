@@ -24,7 +24,10 @@ run(Config) ->
     _ -> ok
   end.
 
-find_bitcask_large_values(DataDir, ThresholdSize, ThresholdType) ->
+find_bitcask_large_values(DataDir, ThresholdSize, ThresholdType)
+    when ThresholdType =:= blob_size
+      orelse ThresholdType =:= sibling_count
+      orelse ThresholdType =:= vclock_length ->
   {ok, Dirs} = file:list_dir(DataDir),
 
   lager:info("Checking ~s for ~s over ~w",
@@ -48,7 +51,9 @@ find_bitcask_large_values(DataDir, ThresholdSize, ThresholdType) ->
     lager:info("Checking bitcask directory: ~s", [Dir]),
     bitcask:fold(Ref, F, ok),
     bitcask:close(Ref)
-  end, Dirs).
+  end, Dirs);
+find_bitcask_large_values(_, _, ThresholdType) ->
+  throw({invalid_threshold_type, ThresholdType}).
 
 calc_size(_K, V, blob_size) ->
   erlang:size(V);
