@@ -26,7 +26,7 @@ run(Config) ->
     false ->
       ok;
     true ->
-      lager:warning(warning, "Beam memory usage is at ~s%", [Percent])
+      lager:warning("Beam memory usage is at ~s%", [Percent])
   end.
 
 
