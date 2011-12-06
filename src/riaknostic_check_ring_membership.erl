@@ -19,18 +19,26 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
--module(riaknostic_ring_membership).
--export([run/1]).
+-module(riaknostic_check_ring_membership).
+-behaviour(riaknostic_check).
 
-run(Config) ->
-  {riak_stats, Stats} = lists:keyfind(riak_stats, 1, Config),
-  {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
-  {nodename, NodeName} = lists:keyfind(nodename, 1, Stats),
+-export([valid/1,
+         check/1,
+         format/1]).
 
-  case lists:member(NodeName, RingMembers) of
-    true ->
-      lager:info("Node is a member of the ring");
-    false ->
-      lager:error("Node is not a member of the ring")
-  end.
+valid(Config) ->
+    riaknostic_node:can_connect(Config).
 
+check(Config) ->
+    Stats = riaknostic_node:stats(Config),
+    {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
+    {nodename, NodeName} = lists:keyfind(nodename, 1, Stats),
+    case lists:member(Nodename, RingMembers) of
+        true ->
+            [];
+        false ->
+            [{warning, {not_ring_member, Nodename}}]
+    end.
+
+format({not_ring_member, Nodename}, _Config) ->
+    {"Local node ~w is not a member of the ring. Please check that the -name setting in vm.args is correct.", [Nodename]}.
