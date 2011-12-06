@@ -24,6 +24,8 @@
 -export([main/1,
          run/1]).
 
+-type config() :: [proplists:property()].
+
 -type opt() :: {atom(), any()}.
 -type opt_list() :: [opt()].
 
