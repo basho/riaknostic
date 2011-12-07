@@ -35,7 +35,7 @@ check(Config) ->
     {mem_allocated, MemAllocated} = lists:keyfind(mem_allocated, 1, Stats),
     Pid = riaknostic_node:pid(Config),
     Output = riaknostic_util:run_command("ps -o pmem,rss,command -p " ++ Pid),
-    [_, Percent, RealSize, | _] = re:split(Output, "[ ]+"),
+    [_, Percent, RealSize| _] = re:split(Output, "[ ]+"),
     Messages = [
                 {info, {memory_allocated, MemAllocated, MemTotal}},
                 {info, {process_usage, Percent, RealSize}}

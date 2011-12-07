@@ -19,31 +19,25 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
--module(riaknostic_nodes_connected).
--export([run/1]).
+-module(riaknostic_check_nodes_connected).
+-behaviour(riaknostic_check).
 
-run(Config) ->
-  {riak_stats, Stats} = lists:keyfind(riak_stats, 1, Config),
+-export([valid/1,
+         check/1,
+         format/2]).
 
-  {connected_nodes, ConnectedNodes} = lists:keyfind(connected_nodes, 1, Stats),
-  {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
-  {nodename, NodeName} = lists:keyfind(nodename, 1, Stats),
+valid(Config) ->
+    riaknostic_node:can_connect(Config).
 
-  lager:info(
-    "Checking connected nodes: ~p",
-    [[CN || CN <- ConnectedNodes, CN =/= node()]]
-  ),
+check(Config) ->
+    Stats = riaknostic_node:stats(Config),
+    {connected_nodes, ConnectedNodes} = lists:keyfind(connected_nodes, 1, Stats),
+    {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
+    {nodename, NodeName} = lists:keyfind(nodename, 1, Stats),
 
-  lists:foreach(fun(Node) ->
-    case lists:member(Node, ConnectedNodes) of
-      true ->
-        lager:info("Node is connected to ~s", [Node]);
-      false when Node =:= NodeName ->
-        ok;
-      false ->
-        lager:error(
-          "Node ~s is part of the ring but not connected to this node.",
-          [Node]
-        )
-    end
-  end, RingMembers).
+    [ {warning, {node_disconnected, N}} || N <- RingMembers,
+                                           N =/= NodeName,
+                                           lists:member(N, ConnectedNodes) == false].
+
+format({node_disconnected, Node}, _Config) ->
+    {"Cluster member ~s is not connected to this node. Please check whether it is down.", [Node]}.

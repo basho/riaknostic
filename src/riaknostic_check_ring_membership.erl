@@ -24,7 +24,7 @@
 
 -export([valid/1,
          check/1,
-         format/1]).
+         format/2]).
 
 valid(Config) ->
     riaknostic_node:can_connect(Config).
@@ -33,11 +33,11 @@ check(Config) ->
     Stats = riaknostic_node:stats(Config),
     {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
     {nodename, NodeName} = lists:keyfind(nodename, 1, Stats),
-    case lists:member(Nodename, RingMembers) of
+    case lists:member(NodeName, RingMembers) of
         true ->
             [];
         false ->
-            [{warning, {not_ring_member, Nodename}}]
+            [{warning, {not_ring_member, NodeName}}]
     end.
 
 format({not_ring_member, Nodename}, _Config) ->
