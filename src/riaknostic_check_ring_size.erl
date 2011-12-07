@@ -19,20 +19,23 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
--module(riaknostic_ring_size_partitions).
--export([run/1]).
+-module(riaknostic_check_ring_size).
+-behaviour(riaknostic_check).
 
-run(Config) ->
-  {riak_stats, Stats} = lists:keyfind(riak_stats, 1, Config),
-  {ring_creation_size, RingSize} = lists:keyfind(ring_creation_size, 1, Stats),
-  {ring_num_partitions, NumPartitions} = lists:keyfind(ring_num_partitions, 1, Stats),
+-export([valid/1,
+         check/1
+         format/2]).
 
-  case RingSize == NumPartitions of
-    true ->
-      lager:info("Ring creation size same as number of partitions.");
-    false ->
-      lager:error(
-        "The ring_creation size value (~B) is not equal to the number of partitions (~B)",
-        [RingSize, NumPartitions]
-      )
-  end.
+valid(Config) ->
+    riaknostic_node:can_connect(Config).
+
+check(Config) ->
+    Stats = riaknostic_node:stats(Config),
+    {ring_creation_size, RingSize} = lists:keyfind(ring_creation_size, 1, Stats),
+    {ring_num_partitions, NumPartitions} = lists:keyfind(ring_num_partitions, 1, Stats),
+
+    [ {notice, {ring_size_unequal, RingSize, NumPartitions}} || RingSize =/= NumPartitions ].
+
+format({ring_size_unequal, S, P}, _Config) ->
+    {"The configured ring_creation_size (~B) is not equal to the number of partitions in the ring (~B). "
+     "Please verify that the ring_creation_size in app.config is correct.", [S, P]}.
