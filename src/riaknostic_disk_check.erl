@@ -20,39 +20,71 @@
 %%
 %% -------------------------------------------------------------------
 -module(riaknostic_disk_check).
--export([run/1]).
+-behaviour(riaknostic_check).
 
-run(Config) ->
-  {riak_stats, Stats} = lists:keyfind(riak_stats, 1, Config),
-  {disk, DiskDatum} = lists:keyfind(disk, 1, Stats),
+-include_lib("kernel/include/file.hrl").
 
-  lists:foreach(fun({Path, Capacity, Usage}) ->
-    Noatime = is_noatime(Path),
+-export([valid/1,
+         check/1,
+         format/2]).
 
-    lager:info(
-      "Disk mounted at ~p is ~p% full (~p KB / ~p KB) with noatime ~p",
-      [Path, Usage, Capacity * Usage * 0.01, Capacity, Noatime]
-    ),
+-spec valid(riaknostic:config()) -> true | false.
+valid(_Config) ->
+    true.
 
-    case Usage >= 90 of
-      false ->
-        ok;
-      true ->
-        lager:warning("Disk mounted at ~p is ~p% full", [Path, Usage])
-    end,
+-spec check(riaknostic:config()) -> [{lager:log_level(), term()}].
+check(Config) ->
+  % This is probably wrong :)
+    DataDir = riaknostic_config:get_app_config("DATA_DIR", Config),
+    
+    
+    FileName = filename:join([filename:absname(DataDir), "noatime.tmp"]),
+    
 
-    case Noatime of
-      on ->
-        ok;
-      off ->
-        lager:warning("Disk mounted at ~p has noatime off", [Path])
-    end
-  end, DiskDatum).
+    case filelib:is_dir(DataDir) of
+        true ->
+            case file:write_file(FileName, [""]) of
+                ok ->
+                    case file:read_file_info(FileName) of
+                        {ok, FileInfo1} -> 
+                            ATime1 = FileInfo1#file_info.atime,
+                            timer:sleep(1001),
+                            case file:open(FileName, read) of
+                                {ok, S} ->
+                                    io:get_line(S, ''),
+                                    file:close(S),
+                                    case file:read_file_info(FileName) of
+                                        {ok, FileInfo2} ->
+                                            ATime2 = FileInfo2#file_info.atime,
+                                            file:delete(FileName),
+                                            case (ATime1 =/= ATime2) of
+                                                true ->
+                                                    [{error, {atime, DataDir}}];
+                                                _ ->
+                                                    [] 
+                                            end;
+                                        _ ->
+                                            [{warn, {no_read, FileName}}]
+                                    end;
+                                _ ->
+                                    [{warn, {no_read, FileName}}]
+                            end;
+                        _ ->
+                            [{warn, {no_read, FileName}}]
+                    end;   
+                {error, _} ->
+                    [{error, {no_write, DataDir}}]                    
+            end;
+        _ ->
+            [{error, {no_data_dir, DataDir}}]
+    end.
 
-is_noatime(MountPoint) ->
-  Ouput = riaknostic_util:run_command("mount | grep -P ' on " ++ MountPoint ++ " '"),
-  [ Line | _ ] = re:split(Ouput, "\\n"),
-  case re:run(Line, "noatime") of
-    nomatch -> off;
-    _ -> on
-  end.
+-spec format(term(), riaknostic:config()) -> iolist() | {io:format(), [term()]}.
+format({no_data_dir, DataDir}, _Config) ->
+    {"Data directory ~s does not exist", [DataDir]};
+format({no_write, DataDir}, _Config) ->
+    {"No write access to data directory ~s.", [DataDir]};
+format({no_read, DataDir}, _Config) ->
+    {"No read access to data directory ~s.", [DataDir]};
+format({atime, Dir}, _Config) ->
+    {"Data directory ~s is not mounted with 'noatime'", [Dir]}.
