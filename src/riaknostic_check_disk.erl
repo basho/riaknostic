@@ -19,7 +19,7 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
--module(riaknostic_disk_check).
+-module(riaknostic_check_disk).
 -behaviour(riaknostic_check).
 
 -include_lib("kernel/include/file.hrl").
