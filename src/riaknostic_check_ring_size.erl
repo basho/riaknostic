@@ -23,7 +23,7 @@
 -behaviour(riaknostic_check).
 
 -export([valid/1,
-         check/1
+         check/1,
          format/2]).
 
 valid(Config) ->
@@ -34,7 +34,7 @@ check(Config) ->
     {ring_creation_size, RingSize} = lists:keyfind(ring_creation_size, 1, Stats),
     {ring_num_partitions, NumPartitions} = lists:keyfind(ring_num_partitions, 1, Stats),
 
-    [ {notice, {ring_size_unequal, RingSize, NumPartitions}} || RingSize =/= NumPartitions ].
+    [ {notice, {ring_size_unequal, RingSize, NumPartitions}} || RingSize /= NumPartitions ].
 
 format({ring_size_unequal, S, P}, _Config) ->
     {"The configured ring_creation_size (~B) is not equal to the number of partitions in the ring (~B). "
