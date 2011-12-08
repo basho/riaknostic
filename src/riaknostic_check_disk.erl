@@ -60,7 +60,8 @@ check() ->
 -spec format(term()) -> iolist() | {io:format(), [term()]}.
 format({disk_full, DataDir}) ->
     {"Disk containing data directory ~s is full! " 
-     "Please check that it is set to the correct location and that there are not other files using up space intended for Riak.", [DataDir]};
+     "Please check that it is set to the correct location and that there are not "
+     "other files using up space intended for Riak.", [DataDir]};
 format({no_data_dir, DataDir}) ->
     {"Data directory ~s does not exist. Please create it.", [DataDir]};
 format({no_write, DataDir}) ->
@@ -72,7 +73,8 @@ format({no_read, DataDir}) ->
 format({write_check, File}) ->
     {"Write-test file ~s is a directory! Please remove it so this test can continue.", [File]};
 format({atime, Dir}) ->
-    {"Data directory ~s is not mounted with 'noatime'. Please remount its disk with the 'noatime' flag to improve performance.", [Dir]}.
+    {"Data directory ~s is not mounted with 'noatime'. "
+     "Please remount its disk with the 'noatime' flag to improve performance.", [Dir]}.
 
 %%% Private functions
 
