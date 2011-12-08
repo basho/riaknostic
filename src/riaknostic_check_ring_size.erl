@@ -22,20 +22,20 @@
 -module(riaknostic_check_ring_size).
 -behaviour(riaknostic_check).
 
--export([valid/1,
-         check/1,
-         format/2]).
+-export([valid/0,
+         check/0,
+         format/1]).
 
-valid(Config) ->
-    riaknostic_node:can_connect(Config).
+valid() ->
+    riaknostic_node:can_connect().
 
-check(Config) ->
-    Stats = riaknostic_node:stats(Config),
+check() ->
+    Stats = riaknostic_node:stats(),
     {ring_creation_size, RingSize} = lists:keyfind(ring_creation_size, 1, Stats),
     {ring_num_partitions, NumPartitions} = lists:keyfind(ring_num_partitions, 1, Stats),
 
     [ {notice, {ring_size_unequal, RingSize, NumPartitions}} || RingSize /= NumPartitions ].
 
-format({ring_size_unequal, S, P}, _Config) ->
+format({ring_size_unequal, S, P}) ->
     {"The configured ring_creation_size (~B) is not equal to the number of partitions in the ring (~B). "
      "Please verify that the ring_creation_size in app.config is correct.", [S, P]}.

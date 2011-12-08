@@ -40,38 +40,38 @@
 
 -include_lib("kernel/include/file.hrl").
 
--export([valid/1,
-         check/1,
-         format/2]).
+-export([valid/0,
+         check/0,
+         format/1]).
 
--spec valid(riaknostic:config()) -> true | false.
-valid(_Config) ->
+-spec valid() -> true | false.
+valid() ->
     true.
 
--spec check(riaknostic:config()) -> [{lager:log_level(), term()}].
-check(Config) ->
-    DataDirs = riaknostic_config:data_directories(Config),
+-spec check() -> [{lager:log_level(), term()}].
+check() ->
+    DataDirs = riaknostic_config:data_directories(),
     %% Add additional disk checks in the function below
     lists:flatmap(fun(Dir) ->
                           check_directory_permissions(Dir)
                   end,
                   DataDirs).
 
--spec format(term(), riaknostic:config()) -> iolist() | {io:format(), [term()]}.
-format({disk_full, DataDir}, _Config) ->
+-spec format(term()) -> iolist() | {io:format(), [term()]}.
+format({disk_full, DataDir}) ->
     {"Disk containing data directory ~s is full! " 
      "Please check that it is set to the correct location and that there are not other files using up space intended for Riak.", [DataDir]};
-format({no_data_dir, DataDir}, _Config) ->
+format({no_data_dir, DataDir}) ->
     {"Data directory ~s does not exist. Please create it.", [DataDir]};
-format({no_write, DataDir}, Config) ->
-    User = riaknostic_config:user(Config),
+format({no_write, DataDir}) ->
+    User = riaknostic_config:user(),
     {"No write access to data directory ~s. Please make it writeable by the '~s' user.", [DataDir, User]};
-format({no_read, DataDir}, Config) ->
-    User = riaknostic_config:user(Config),
+format({no_read, DataDir}) ->
+    User = riaknostic_config:user(),
     {"No read access to data directory ~s. Please make it readable by the '~s' user.", [DataDir, User]};
-format({write_check, File}, _Config) ->
+format({write_check, File}) ->
     {"Write-test file ~s is a directory! Please remove it so this test can continue.", [File]};
-format({atime, Dir}, _Config) ->
+format({atime, Dir}) ->
     {"Data directory ~s is not mounted with 'noatime'. Please remount its disk with the 'noatime' flag to improve performance.", [Dir]}.
 
 %%% Private functions

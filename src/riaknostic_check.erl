@@ -23,7 +23,8 @@
 %% Enforces a common API among all check modules.
 -module(riaknostic_check).
 -export([behaviour_info/1]).
--export([check/2, modules/0]).
+-export([check/1,
+         modules/0]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -32,17 +33,17 @@
 
 -spec behaviour_info(atom()) -> 'undefined' | [{atom(), arity()}].
 behaviour_info(callbacks) ->
-    [{valid, 1},
-     {check, 1},
-     {format, 2}];
+    [{valid, 0},
+     {check, 0},
+     {format, 1}];
 behaviour_info(_) ->
     undefined.
 
--spec check(module(), riaknostic:config()) -> [{lager:log_level(), module(), term()}].
-check(Module, Config) ->
-    case Module:valid(Config) of
+-spec check(module()) -> [{lager:log_level(), module(), term()}].
+check(Module) ->
+    case Module:valid() of
         true ->
-            [ {Level, Module, Message} || {Level, Message} <- Module:check(Config) ];
+            [ {Level, Module, Message} || {Level, Message} <- Module:check() ];
         _ ->
             []
     end.
@@ -53,4 +54,4 @@ modules() ->
     [ M || M <- Mods,
            Attr <- M:module_info(attributes),
            {behaviour, [?MODULE]} =:= Attr orelse {behavior, [?MODULE]} =:= Attr ].
-           
+

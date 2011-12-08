@@ -22,18 +22,18 @@
 -module(riaknostic_check_memory_use).
 -behaviour(riaknostic_check).
 
--export([valid/1,
-         check/1,
-         format/2]).
+-export([valid/0,
+         check/0,
+         format/1]).
 
-valid(Config) ->
-    riaknostic_node:can_connect(Config).
+valid() ->
+    riaknostic_node:can_connect().
 
-check(Config) ->
-    Stats = riaknostic_node:stats(Config),
+check() ->
+    Stats = riaknostic_node:stats(),
     {mem_total, MemTotal} = lists:keyfind(mem_total, 1, Stats),
     {mem_allocated, MemAllocated} = lists:keyfind(mem_allocated, 1, Stats),
-    Pid = riaknostic_node:pid(Config),
+    Pid = riaknostic_node:pid(),
     Output = riaknostic_util:run_command("ps -o pmem,rss,command -p " ++ Pid),
     [_, Percent, RealSize| _] = re:split(Output, "[ ]+"),
     Messages = [
@@ -47,9 +47,9 @@ check(Config) ->
             [{critical, {high_memory, Percent}} | Messages]
     end.
 
-format({high_memory, Percent}, _Config) ->
+format({high_memory, Percent}) ->
     {"Riak memory usage is HIGH: ~s% of available RAM", [Percent]};
-format({memory_allocated, Allocated, Total}, _Config) ->
+format({memory_allocated, Allocated, Total}) ->
     {"Riak has allocated ~p KB of ~p KB", [Allocated div 1024, Total div 1024]};
-format({process_usage, Percent, Real}, _Config) ->
+format({process_usage, Percent, Real}) ->
     {"Riak process is using ~s% of available RAM, totalling ~s KB of real memory.", [Percent, Real]}.

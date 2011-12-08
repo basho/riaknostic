@@ -22,15 +22,15 @@
 -module(riaknostic_check_ring_membership).
 -behaviour(riaknostic_check).
 
--export([valid/1,
-         check/1,
-         format/2]).
+-export([valid/0,
+         check/0,
+         format/1]).
 
-valid(Config) ->
-    riaknostic_node:can_connect(Config).
+valid() ->
+    riaknostic_node:can_connect().
 
-check(Config) ->
-    Stats = riaknostic_node:stats(Config),
+check() ->
+    Stats = riaknostic_node:stats(),
     {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
     {nodename, NodeName} = lists:keyfind(nodename, 1, Stats),
     case lists:member(NodeName, RingMembers) of
@@ -40,5 +40,5 @@ check(Config) ->
             [{warning, {not_ring_member, NodeName}}]
     end.
 
-format({not_ring_member, Nodename}, _Config) ->
+format({not_ring_member, Nodename}) ->
     {"Local node ~w is not a member of the ring. Please check that the -name setting in vm.args is correct.", [Nodename]}.

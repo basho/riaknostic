@@ -24,17 +24,17 @@
 
 -include_lib("kernel/include/file.hrl").
 
--export([valid/1,
-         check/1,
-         format/2]).
+-export([valid/0,
+         check/0,
+         format/1]).
 
--spec valid(riaknostic:config()) -> true | false.
-valid(_Config) ->
+-spec valid() -> true | false.
+valid() ->
     true.
 
--spec check(riaknostic:config()) -> [{lager:log_level(), term()}].
-check(Config) ->
-    CrashDumpConfig = riaknostic_config:get_vm_env("ERL_CRASH_DUMP", Config),
+-spec check() -> [{lager:log_level(), term()}].
+check() ->
+    CrashDumpConfig = riaknostic_config:get_vm_env("ERL_CRASH_DUMP"),
     {DumpDir, DumpFile} = case CrashDumpConfig of
                               undefined ->
                                   Cwd = filename:absname(os:getenv("PWD")),
@@ -60,11 +60,11 @@ check(Config) ->
             Messages
     end.
 
--spec format(term(), riaknostic:config()) -> iolist() | {io:format(), [term()]}.
-format({eaccess, Dir}, _Config) ->
+-spec format(term()) -> iolist() | {io:format(), [term()]}.
+format({eaccess, Dir}) ->
     {"Crash dump directory ~s is not writeable by Riak. Please set -env ERL_CRASH_DUMP <dir>/erl_crash.dump in vm.args to a writeable path.", [Dir]};
-format({enoent, Dir}, _Config) ->
+format({enoent, Dir}) ->
     {"Crash dump directory ~s does not exist. Please set -env ERL_CRASH_DUMP <dir>/erl_crash.dump in vm.args to a writeable path.", [Dir]};
-format({crash_dump, File}, _Config) ->
+format({crash_dump, File}) ->
     FileInfo = file:read_file_info(File),
     {"Riak crashed at ~s, leaving crash dump in ~s. Please inspect or remove the file.", [httpd_util:rfc1123_date(FileInfo#file_info.mtime), File]}.

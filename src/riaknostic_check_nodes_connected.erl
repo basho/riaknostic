@@ -22,15 +22,15 @@
 -module(riaknostic_check_nodes_connected).
 -behaviour(riaknostic_check).
 
--export([valid/1,
-         check/1,
-         format/2]).
+-export([valid/0,
+         check/0,
+         format/1]).
 
-valid(Config) ->
-    riaknostic_node:can_connect(Config).
+valid() ->
+    riaknostic_node:can_connect().
 
-check(Config) ->
-    Stats = riaknostic_node:stats(Config),
+check() ->
+    Stats = riaknostic_node:stats(),
     {connected_nodes, ConnectedNodes} = lists:keyfind(connected_nodes, 1, Stats),
     {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
     {nodename, NodeName} = lists:keyfind(nodename, 1, Stats),
@@ -39,5 +39,5 @@ check(Config) ->
                                            N =/= NodeName,
                                            lists:member(N, ConnectedNodes) == false].
 
-format({node_disconnected, Node}, _Config) ->
+format({node_disconnected, Node}) ->
     {"Cluster member ~s is not connected to this node. Please check whether it is down.", [Node]}.
