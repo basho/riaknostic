@@ -129,6 +129,7 @@ check_is_readable(Directory) ->
             {error, {no_read, Directory}}
     end.
 
+%% Check if the file we created is readable
 check_is_file_readable(Directory) ->
     File = filename:join([Directory, ?TEST_FILE]),
     case file:read_file(File) of
@@ -140,6 +141,7 @@ check_is_file_readable(Directory) ->
         _ -> ok
     end.
 
+%% Check if the directory is mounted with 'noatime'
 check_atime(Directory) ->
     File = filename:join([Directory, ?TEST_FILE]),
     {ok, FileInfo1} = file:read_file_info(File),
