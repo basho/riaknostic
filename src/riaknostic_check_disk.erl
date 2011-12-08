@@ -22,6 +22,22 @@
 -module(riaknostic_check_disk).
 -behaviour(riaknostic_check).
 
+%% The file that we will attempt to create and read under each data directory.
+-define(TEST_FILE, "riaknostic.tmp").
+
+%% A dependent chain of permissions checking functions.
+-define(CHECKPERMFUNS, [check_is_dir,
+                        check_is_writeable,
+                        check_is_readable,
+                        check_is_file_readable,
+                        check_atime]).
+
+-compile([{nowarn_unused_function, [check_is_dir/1,
+                                    check_is_writeable/1,
+                                    check_is_readable/1,
+                                    check_is_file_readable/1,
+                                    check_atime/1]}]).
+
 -include_lib("kernel/include/file.hrl").
 
 -export([valid/1,
@@ -34,57 +50,109 @@ valid(_Config) ->
 
 -spec check(riaknostic:config()) -> [{lager:log_level(), term()}].
 check(Config) ->
-  % This is probably wrong :)
-    DataDir = riaknostic_config:get_app_config("DATA_DIR", Config),
-    
-    
-    FileName = filename:join([filename:absname(DataDir), "noatime.tmp"]),
-    
-
-    case filelib:is_dir(DataDir) of
-        true ->
-            case file:write_file(FileName, [""]) of
-                ok ->
-                    case file:read_file_info(FileName) of
-                        {ok, FileInfo1} -> 
-                            ATime1 = FileInfo1#file_info.atime,
-                            timer:sleep(1001),
-                            case file:open(FileName, read) of
-                                {ok, S} ->
-                                    io:get_line(S, ''),
-                                    file:close(S),
-                                    case file:read_file_info(FileName) of
-                                        {ok, FileInfo2} ->
-                                            ATime2 = FileInfo2#file_info.atime,
-                                            file:delete(FileName),
-                                            case (ATime1 =/= ATime2) of
-                                                true ->
-                                                    [{error, {atime, DataDir}}];
-                                                _ ->
-                                                    [] 
-                                            end;
-                                        _ ->
-                                            [{warn, {no_read, FileName}}]
-                                    end;
-                                _ ->
-                                    [{warn, {no_read, FileName}}]
-                            end;
-                        _ ->
-                            [{warn, {no_read, FileName}}]
-                    end;   
-                {error, _} ->
-                    [{error, {no_write, DataDir}}]                    
-            end;
-        _ ->
-            [{error, {no_data_dir, DataDir}}]
-    end.
+    DataDirs = riaknostic_config:data_directories(Config),
+    %% Add additional disk checks in the function below
+    lists:flatmap(fun(Dir) ->
+                          check_directory_permissions(Dir)
+                  end,
+                  DataDirs).
 
 -spec format(term(), riaknostic:config()) -> iolist() | {io:format(), [term()]}.
+format({disk_full, DataDir}, _Config) ->
+    {"Disk containing data directory ~s is full! " 
+     "Please check that it is set to the correct location and that there are not other files using up space intended for Riak.", [DataDir]};
 format({no_data_dir, DataDir}, _Config) ->
-    {"Data directory ~s does not exist", [DataDir]};
-format({no_write, DataDir}, _Config) ->
-    {"No write access to data directory ~s.", [DataDir]};
-format({no_read, DataDir}, _Config) ->
-    {"No read access to data directory ~s.", [DataDir]};
+    {"Data directory ~s does not exist. Please create it.", [DataDir]};
+format({no_write, DataDir}, Config) ->
+    User = riaknostic_config:user(Config),
+    {"No write access to data directory ~s. Please make it writeable by the '~s' user.", [DataDir, User]};
+format({no_read, DataDir}, Config) ->
+    User = riaknostic_config:user(Config),
+    {"No read access to data directory ~s. Please make it readable by the '~s' user.", [DataDir, User]};
+format({write_check, File}, _Config) ->
+    {"Write-test file ~s is a directory! Please remove it so this test can continue.", [File]};
 format({atime, Dir}, _Config) ->
-    {"Data directory ~s is not mounted with 'noatime'", [Dir]}.
+    {"Data directory ~s is not mounted with 'noatime'. Please remount its disk with the 'noatime' flag to improve performance.", [Dir]}.
+
+%%% Private functions
+
+check_directory_permissions(Directory) ->
+    check_directory(Directory, ?CHECKPERMFUNS).
+
+%% Run a list of check functions against the given directory,
+%% returning the first non-ok result.
+check_directory(_, []) ->
+    [];
+check_directory(Directory, [Check|Checks]) ->
+    case ?MODULE:Check(Directory) of
+        ok ->
+            check_directory(Directory, Checks);
+        Message ->
+            [ Message ]
+    end.
+
+%% Check if the path is actually a directory
+check_is_dir(Directory) ->
+    case filelib:is_dir(Directory) of
+        true ->
+            ok;
+        _ ->
+            {error, {no_data_dir, Directory}}
+    end.
+
+%% Check if the directory is writeable
+check_is_writeable(Directory) ->
+    File = filename:join([Directory, ?TEST_FILE]),
+    case file:write_file(File, <<"ok">>) of
+        ok ->
+            ok;
+        {error, Error} when Error == enoent orelse Error == eaccess ->
+            {error, {no_write, Directory}};
+        {error, enospc} ->
+            {critical, {disk_full, Directory}};
+        {error, eisdir} ->
+            {error, {write_check, File}}
+    end.
+
+%% Check if the directory is readable
+check_is_readable(Directory) ->
+    case file:read_file_info(Directory) of
+        {ok, #file_info{access=Access}} when Access == read orelse
+                                             Access == read_write ->
+            ok;
+        {error, eaccess} ->
+            {error, {no_read, Directory}};
+        {error, Error} when Error == enoent orelse
+                            Error == enotdir ->
+            {error, {no_data_dir, Directory}};
+        _ ->
+            {error, {no_read, Directory}}
+    end.
+
+check_is_file_readable(Directory) ->
+    File = filename:join([Directory, ?TEST_FILE]),
+    case file:read_file(File) of
+        {error, Error} when Error == eaccess orelse
+                            Error == enotdir ->
+            {error, {no_read, Directory}};
+        {error, enoent} ->
+            {error, {write_check, File}};
+        _ -> ok
+    end.
+
+check_atime(Directory) ->
+    File = filename:join([Directory, ?TEST_FILE]),
+    {ok, FileInfo1} = file:read_file_info(File),
+    timer:sleep(1001),
+    {ok, S} = file:open(File, read),
+    io:get_line(S, ''),
+    file:close(S),
+    {ok, FileInfo2} = file:read_file_info(File),
+    file:delete(File),
+    case (FileInfo1#file_info.atime =/= FileInfo2#file_info.atime) of
+        true ->
+            {notice, {atime, Directory}};
+        _ ->
+            ok
+    end.
+
