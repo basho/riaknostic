@@ -23,7 +23,7 @@
 %% Enforces a common API among all check modules.
 -module(riaknostic_check).
 -export([behaviour_info/1]).
--export([check/2]).
+-export([check/2, modules/0]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -47,3 +47,10 @@ check(Module, Config) ->
             []
     end.
 
+-spec modules() -> [module()].
+modules() ->
+    {ok, Mods} = application:get_key(riaknostic, modules),
+    [ M || M <- Mods,
+           Attr <- M:module_info(attributes),
+           {behaviour, [?MODULE]} =:= Attr orelse {behavior, [?MODULE]} =:= Attr ].
+           
