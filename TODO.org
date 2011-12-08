@@ -6,3 +6,5 @@
 * TODO implement riaknostic_node:local_command/4 and cluster_command/4 - performs rpc call to local/all member nodes
   needs to handle badrpc errors appropriately
 * TODO implement riaknostic_node:pid/1 - gets os:getpid() using local_command
+* TODO implement riaknostic_config:get_app_env/2 - fetches arbitrarily-nested config option from app.config (
+  get_app_env([atom()], config()) -> term().
