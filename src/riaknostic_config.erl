@@ -26,6 +26,8 @@
          get_app_env/1,
          get_app_env/2,
          get_vm_env/1,
+         base_dir/0,
+         etc_dir/0,
          user/0]).
 
 %% @doc Prepares appropriate configuration so the riaknostic script
@@ -56,8 +58,7 @@ data_directories() ->
                _ ->
                    data_directory(KVBackend)
            end,
-    {ok, Base} = application:get_env(riaknostic, base),
-    [ filename:absname(Dir, Base) || Dir <- Dirs, Dir =/= undefined ].
+    [ filename:absname(Dir, base_dir()) || Dir <- Dirs, Dir =/= undefined ].
 
 %% @doc Get a key out of the app.config file, or if it doesn't exist,
 %%      return the Default. See also get_app_env/2.
@@ -95,6 +96,24 @@ user() ->
         _ -> undefined
     end.
 
+%% @doc The base directory from which the Riak script runs.
+base_dir() ->
+    case application:get_env(riaknostic, base) of
+        undefined ->
+            filename:absname(".");
+        {ok, Path} ->
+            filename:absname(Path)
+    end.
+
+%% @doc The Riak configuration directory.
+etc_dir() ->
+    case application:get_env(riaknostic, etc) of
+        undefined ->
+            filename:absname("./etc", base_dir());
+        {ok, Path} ->
+            filename:absname(Path, base_dir())
+    end.
+
 %% Private functions
 
 start_lager() ->
@@ -110,11 +129,11 @@ start_lager() ->
     end.
 
 load_app_config() ->
-    case application:get_env(riaknostic, etc) of
-        undefined ->
+    case filelib:is_dir(etc_dir()) of
+        false ->
             {error, "Cannot find Riak configuration directory!"};
-        {ok, Path} ->
-            AppConfig = filename:join([Path, "app.config"]),
+        true ->
+            AppConfig = filename:join([etc_dir(), "app.config"]),
             case file:consult(AppConfig) of
                 {ok, [Config]} ->
                     application:set_env(riaknostic, app_config, Config);
@@ -124,11 +143,11 @@ load_app_config() ->
     end.
 
 load_vm_args() ->
-    case application:get_env(riaknostic, etc) of
-        undefined ->
+    case filelib:is_dir(etc_dir()) of
+        false ->
             {error, "Cannot find Riak configuration directory!"};
-        {ok, Path} ->
-            VmArgs = filename:join([Path, "vm.args"]),
+        true ->
+            VmArgs = filename:join([etc_dir(), "vm.args"]),
             case file:read_file(VmArgs) of
                 {error, Reason} ->
                     {error, io_lib:format("Could not read ~s, received error ~w!", [VmArgs, Reason])};
