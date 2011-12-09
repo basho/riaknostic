@@ -87,7 +87,11 @@ get_vm_env(Key) ->
 %% @doc Determines the user/uid that the installed Riak runs as.
 -spec user() -> string().
 user() ->
-    application:get_env(riaknostic, user).
+    case application:get_env(riaknostic, user) of
+        {ok, Value} ->
+            Value;
+        _ -> undefined
+    end.
 
 %% Private functions
 
