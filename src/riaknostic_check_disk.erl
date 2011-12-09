@@ -26,17 +26,11 @@
 -define(TEST_FILE, "riaknostic.tmp").
 
 %% A dependent chain of permissions checking functions.
--define(CHECKPERMFUNS, [check_is_dir,
-                        check_is_writeable,
-                        check_is_readable,
-                        check_is_file_readable,
-                        check_atime]).
-
--compile([{nowarn_unused_function, [check_is_dir/1,
-                                    check_is_writeable/1,
-                                    check_is_readable/1,
-                                    check_is_file_readable/1,
-                                    check_atime/1]}]).
+-define(CHECKPERMFUNS, [fun check_is_dir/1,
+                        fun check_is_writeable/1,
+                        fun check_is_readable/1,
+                        fun check_is_file_readable/1,
+                        fun check_atime/1]).
 
 -include_lib("kernel/include/file.hrl").
 
@@ -91,7 +85,7 @@ check_directory_permissions(Directory) ->
 check_directory(_, []) ->
     [];
 check_directory(Directory, [Check|Checks]) ->
-    case ?MODULE:Check(Directory) of
+    case Check(Directory) of
         ok ->
             check_directory(Directory, Checks);
         Message ->

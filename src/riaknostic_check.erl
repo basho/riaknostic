@@ -24,7 +24,8 @@
 -module(riaknostic_check).
 -export([behaviour_info/1]).
 -export([check/1,
-         modules/0]).
+         modules/0,
+         print/1]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -56,3 +57,11 @@ modules() ->
            Attr <- M:module_info(attributes),
            {behaviour, [?MODULE]} =:= Attr orelse {behavior, [?MODULE]} =:= Attr ].
 
+-spec print({lager:log_level(), module(), term()}) -> ok.
+print({Level, Mod, Term}) ->
+    case Mod:format(Term) of
+        {Format, Terms} ->
+            lager:log(Level, self(), Format, Terms);
+        String ->
+            lager:log(Level, self(), String)
+    end.

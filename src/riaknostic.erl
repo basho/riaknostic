@@ -57,12 +57,57 @@ list_checks() ->
     lists:foreach(fun({Mod, Desc}) ->
                           io:format("  ~.20s ~s~n", [Mod, Desc])
                   end, lists:sort(Descriptions)).
-usage() ->
-    getopt:usage(?USAGE_OPTS, "riak-admin diag", "[check_name ...]", [{"check_name", "A specific check to run"}]).    
 
-run(_Checks) ->
-    %% riaknostic_config:init(),
-    ok.
+usage() ->
+    getopt:usage(?USAGE_OPTS, "riak-admin diag", "[check_name ...]", [{"check_name", "A specific check to run"}]).
+
+run(InputChecks) ->
+    case riaknostic_config:prepare() of
+        {error, Reason} ->
+            io:format("Fatal error: ~s~n", [Reason]),
+            halt(1);
+        _ ->
+            ok
+    end,
+    Checks = case InputChecks of
+                 [] ->
+                     riaknostic_check:modules();
+                 _ ->
+                     ShortNames = [{riaknostic_util:short_name(Mod), Mod} || Mod <- riaknostic_check:modules() ],
+                     element(1, lists:foldr(fun validate_checks/2, {[], ShortNames}, InputChecks))
+             end,
+    Messages = lists:foldl(fun(Mod, Acc) ->
+                                   Acc ++ riaknostic_check:check(Mod)
+                           end, [], Checks),
+    case Messages of
+        [] ->
+            halt(0);
+        _ ->
+            %% Print the most critical messages first
+            LogLevelNum = lager:minimum_loglevel(lager:get_loglevels()),
+            FilteredMessages = lists:filter(fun({Level,_,_}) ->
+                                                    lager_util:level_to_num(Level) =< LogLevelNum
+                                            end, Messages),
+            SortedMessages = lists:sort(fun({ALevel, _, _}, {BLevel, _, _}) ->
+                                                lager_util:level_to_num(ALevel) > lager_util:level_to_num(BLevel)
+                                        end, FilteredMessages),
+            case SortedMessages of
+                [] ->
+                    halt(0);
+                _ ->
+                    lists:foreach(fun riaknostic_check:print/1, SortedMessages),
+                    halt(1)
+            end
+    end.
+
+validate_checks(Check, {Mods, SNames}) ->
+    case lists:keyfind(Check, 1, SNames) of
+        {Check, Mod} ->
+            {[Mod|Mods], lists:delete({Check, Mod}, SNames)};
+        _ ->
+            lager:warning("Unknown check '~s' specified, skipping.", [Check]),
+            {Mods, SNames}
+    end.
 
 process_opts(Opts) ->
     process_opts(Opts, run).
@@ -70,13 +115,13 @@ process_opts(Opts) ->
 process_opts([], Result) ->
     Result;
 process_opts([H|T], Result) ->
-    process_opts(T,process_option(H, Result)).
+    process_opts(T, process_option(H, Result)).
 
 process_option({etc,Path}, Result) ->
-    application:set_env(riaknostic, etc, Path),
+    application:set_env(riaknostic, etc, filename:absname(Path)),
     Result;
 process_option({base, Path}, Result) ->
-    application:set_env(riaknostic, base, Path),
+    application:set_env(riaknostic, base, filename:absname(Path)),
     Result;
 process_option({user, User}, Result) ->
     application:set_env(riaknostic, user, User),
