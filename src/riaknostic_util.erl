@@ -22,6 +22,10 @@
 -module(riaknostic_util).
 -compile(export_all).
 
+-spec short_name(module()) -> iodata() | unicode:charlist().
+short_name(Mod) when is_atom(Mod) ->
+    re:replace(atom_to_list(Mod), "riaknostic_check_", "").
+
 set_node_name(Name) ->
   case net_kernel:start([Name, longnames]) of
     {ok, _} ->

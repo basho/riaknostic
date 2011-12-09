@@ -33,7 +33,8 @@
 
 -spec behaviour_info(atom()) -> 'undefined' | [{atom(), arity()}].
 behaviour_info(callbacks) ->
-    [{valid, 0},
+    [{description, 0},
+     {valid, 0},
      {check, 0},
      {format, 1}];
 behaviour_info(_) ->

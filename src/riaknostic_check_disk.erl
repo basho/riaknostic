@@ -40,9 +40,14 @@
 
 -include_lib("kernel/include/file.hrl").
 
--export([valid/0,
+-export([description/0,
+         valid/0,
          check/0,
          format/1]).
+
+-spec description() -> iodata().
+description() ->
+    "Data directory permissions and atime".
 
 -spec valid() -> true | false.
 valid() ->

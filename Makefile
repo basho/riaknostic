@@ -1,6 +1,6 @@
 .PHONY: rel stagedevrel deps test
 
-all: deps compile
+all: deps compile escriptize
 
 compile:
 	./rebar compile
@@ -16,6 +16,9 @@ distclean: clean
 
 test:
 	./rebar compile eunit
+
+escriptize:
+	./rebar escriptize
 
 ##
 ## Doc targets

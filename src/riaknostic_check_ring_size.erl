@@ -22,9 +22,13 @@
 -module(riaknostic_check_ring_size).
 -behaviour(riaknostic_check).
 
--export([valid/0,
+-export([description/0,
+         valid/0,
          check/0,
          format/1]).
+
+description() ->
+    "Ring size valid".
 
 valid() ->
     riaknostic_node:can_connect().

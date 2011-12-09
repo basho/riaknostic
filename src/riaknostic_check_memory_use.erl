@@ -22,9 +22,13 @@
 -module(riaknostic_check_memory_use).
 -behaviour(riaknostic_check).
 
--export([valid/0,
+-export([description/0,
+         valid/0,
          check/0,
          format/1]).
+
+description() ->
+    "Measure memory usage".
 
 valid() ->
     riaknostic_node:can_connect().

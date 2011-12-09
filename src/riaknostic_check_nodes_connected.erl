@@ -22,9 +22,13 @@
 -module(riaknostic_check_nodes_connected).
 -behaviour(riaknostic_check).
 
--export([valid/0,
+-export([description/0,
+         valid/0,
          check/0,
          format/1]).
+
+description() ->
+    "Cluster node liveness".
 
 valid() ->
     riaknostic_node:can_connect().
