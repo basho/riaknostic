@@ -42,10 +42,10 @@ check() ->
     CrashDumpConfig = riaknostic_config:get_vm_env("ERL_CRASH_DUMP"),
     {DumpDir, DumpFile} = case CrashDumpConfig of
                               undefined ->
-                                  Cwd = filename:absname(os:getenv("PWD")),
-                                  {Cwd, filename:join([Cwd, "erl_crash.dump"])};
+                                  Cwd = riaknostic_config:base_dir(),
+                                  {Cwd, filename:absname([Cwd, "erl_crash.dump"])};
                               File ->
-                                  AbsFile = filename:absname(File),
+                                  AbsFile = filename:absname(File, riaknostic_config:base_dir()),
                                   {filename:dirname(AbsFile), AbsFile}
                           end,
     Messages = case file:read_file_info(DumpDir) of
@@ -71,5 +71,5 @@ format({eaccess, Dir}) ->
 format({enoent, Dir}) ->
     {"Crash dump directory ~s does not exist. Please set -env ERL_CRASH_DUMP <dir>/erl_crash.dump in vm.args to a writeable path.", [Dir]};
 format({crash_dump, File}) ->
-    FileInfo = file:read_file_info(File),
-    {"Riak crashed at ~s, leaving crash dump in ~s. Please inspect or remove the file.", [httpd_util:rfc1123_date(FileInfo#file_info.mtime), File]}.
+    {ok, #file_info{mtime=MTime}} = file:read_file_info(File),
+    {"Riak crashed at ~s, leaving crash dump in ~s. Please inspect or remove the file.", [httpd_util:rfc1123_date(MTime), File]}.
