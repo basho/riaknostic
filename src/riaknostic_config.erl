@@ -50,12 +50,14 @@ prepare([Fun|T]) ->
 data_directories() ->
     KVBackend = get_app_env([riak_kv, storage_backend]),
     SearchBackend = get_app_env([riak_search, storage_backend], merge_index_backend),
-    case get_app_env([riak_search, enabled]) of
-        true ->
-            data_directory(KVBackend) ++ data_directory(SearchBackend);
-        _ ->
-            data_directory(KVBackend)
-    end.
+    Dirs = case get_app_env([riak_search, enabled]) of
+               true ->
+                   data_directory(KVBackend) ++ data_directory(SearchBackend);
+               _ ->
+                   data_directory(KVBackend)
+           end,
+    {ok, Base} = application:get_env(riaknostic, base),
+    [ filename:absname(Dir, Base) || Dir <- Dirs, Dir =/= undefined ].
 
 %% @doc Get a key out of the app.config file, or if it doesn't exist,
 %%      return the Default. See also get_app_env/2.
