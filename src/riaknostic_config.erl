@@ -164,8 +164,11 @@ load_vm_args([[$#|_]|T]) ->
     load_vm_args(T);
 load_vm_args([""|T]) ->
     load_vm_args(T);
+load_vm_args(["-sname " ++ NodeName|T]) ->
+    application:set_env(riaknostic, node_name, {shortname, string:strip(NodeName)}),
+    load_vm_args(T);
 load_vm_args(["-name " ++ NodeName|T]) ->
-    application:set_env(riaknostic, node_name, string:strip(NodeName)),
+    application:set_env(riaknostic, node_name, {longname, string:strip(NodeName)}),
     load_vm_args(T);
 load_vm_args(["-setcookie " ++ Cookie|T]) ->
     application:set_env(riaknostic, cookie, string:strip(Cookie)),
