@@ -89,7 +89,7 @@ run(InputChecks) ->
                                                     lager_util:level_to_num(Level) =< LogLevelNum
                                             end, Messages),
             SortedMessages = lists:sort(fun({ALevel, _, _}, {BLevel, _, _}) ->
-                                                lager_util:level_to_num(ALevel) > lager_util:level_to_num(BLevel)
+                                                lager_util:level_to_num(ALevel) =< lager_util:level_to_num(BLevel)
                                         end, FilteredMessages),
             case SortedMessages of
                 [] ->

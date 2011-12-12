@@ -69,7 +69,9 @@ pid() ->
 can_connect() ->
     case is_connected() of
         true -> true;
-        false -> maybe_connect()
+        false ->
+            lager:debug("Not connected to the local Riak node, trying to connect. alive:~p connect_failed:~p", [is_alive(), connect_failed()]),
+            maybe_connect()
     end.
 
 -spec stats() -> [proplists:property()].
@@ -81,8 +83,7 @@ stats() ->
 
 %% Private functions
 is_connected() ->
-    Node = nodename(),
-    is_alive() andalso lists:member(Node, nodes()).
+    is_alive() andalso connect_failed() =/= true.
 
 maybe_connect() ->
     case connect_failed() of
@@ -98,6 +99,7 @@ try_connect() ->
     end,
     case {net_kernel:hidden_connect_node(TargetNode), net_adm:ping(TargetNode)} of
         {true, pong} ->
+            application:set_env(riaknostic, connect_failed, false),
             lager:debug("Connected to local Riak node ~p.", [TargetNode]),
             true;
         _ ->
@@ -109,10 +111,12 @@ try_connect() ->
 connect_failed() ->
     case application:get_env(riaknostic, connect_failed) of
         {ok, true} -> true;
+        undefined -> undefined;
         _ -> false
     end.
 
 start_net() ->
+    lager:debug("Starting distributed Erlang."),
     {Type, RiakName} = riaknostic_config:node_name(),
     ThisNode = append_node_suffix(RiakName, "_diag"),
     {ok, _} = net_kernel:start([ThisNode, Type]),
@@ -152,4 +156,4 @@ fetch_stats() ->
             application:set_env(riaknostic, local_stats, PList),
             PList
     end.
-            
+
