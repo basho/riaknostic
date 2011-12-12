@@ -28,6 +28,8 @@
          get_vm_env/1,
          base_dir/0,
          etc_dir/0,
+         node_name/0,
+         cookie/0,
          user/0]).
 
 %% @doc Prepares appropriate configuration so the riaknostic script
@@ -114,6 +116,22 @@ etc_dir() ->
             filename:absname(Path, base_dir())
     end.
 
+%% @doc The local Riak node name
+node_name() ->
+    case application:get_env(riaknostic, node_name) of
+        undefined ->
+            undefined;
+        {ok, Node} ->
+            Node
+    end.
+
+cookie() ->
+    case application:get_env(riaknostic, cookie) of
+        undefined ->
+            undefined;
+        {ok, Cookie} ->
+            list_to_atom(Cookie)
+    end.
 %% Private functions
 
 start_lager() ->
@@ -165,10 +183,10 @@ load_vm_args([[$#|_]|T]) ->
 load_vm_args([""|T]) ->
     load_vm_args(T);
 load_vm_args(["-sname " ++ NodeName|T]) ->
-    application:set_env(riaknostic, node_name, {shortname, string:strip(NodeName)}),
+    application:set_env(riaknostic, node_name, {shortnames, string:strip(NodeName)}),
     load_vm_args(T);
 load_vm_args(["-name " ++ NodeName|T]) ->
-    application:set_env(riaknostic, node_name, {longname, string:strip(NodeName)}),
+    application:set_env(riaknostic, node_name, {longnames, string:strip(NodeName)}),
     load_vm_args(T);
 load_vm_args(["-setcookie " ++ Cookie|T]) ->
     application:set_env(riaknostic, cookie, string:strip(Cookie)),

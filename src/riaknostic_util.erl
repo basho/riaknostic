@@ -26,30 +26,15 @@
 short_name(Mod) when is_atom(Mod) ->
     re:replace(atom_to_list(Mod), "riaknostic_check_", "", [{return, list}]).
 
-set_node_name(Name) ->
-  case net_kernel:start([Name, longnames]) of
-    {ok, _} ->
-      ok;
-    {error, {already_started, _}} ->
-      ok;
-    {error, Reason} ->
-      throw({name_error, Reason})
-  end.
-
 run_command(Command) ->
-  Port = erlang:open_port(
-    { 
-      spawn,
-      Command
-    },
-    [exit_status, stderr_to_stdout]
-  ),
-
-  receive
-    {Port, {data, StdOut}} ->
-      port_close(Port),
-      StdOut
-  end.
+    lager:debug("Running shell command: ~s", [Command]),
+    Port = erlang:open_port({spawn,Command},[exit_status, stderr_to_stdout]),
+    receive
+        {Port, {data, StdOut}} ->
+            lager:debug("Shell command output: ~n~s~n",[StdOut]),
+            port_close(Port),
+            StdOut
+    end.
 
 binary_to_float(Bin) ->
-  list_to_float(binary_to_list(Bin)).
+    list_to_float(binary_to_list(Bin)).

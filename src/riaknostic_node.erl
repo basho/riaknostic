@@ -1,0 +1,155 @@
+%% -------------------------------------------------------------------
+%%
+%% riaknostic - automated diagnostic tools for Riak
+%%
+%% Copyright (c) 2011 Basho Technologies, Inc.  All Rights Reserved.
+%%
+%% This file is provided to you under the Apache License,
+%% Version 2.0 (the "License"); you may not use this file
+%% except in compliance with the License.  You may obtain
+%% a copy of the License at
+%%
+%%   http://www.apache.org/licenses/LICENSE-2.0
+%%
+%% Unless required by applicable law or agreed to in writing,
+%% software distributed under the License is distributed on an
+%% "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+%% KIND, either express or implied.  See the License for the
+%% specific language governing permissions and limitations
+%% under the License.
+%%
+%% -------------------------------------------------------------------
+-module(riaknostic_node).
+
+-export([can_connect/0,
+         stats/0,
+         pid/0,
+         local_command/2,
+         local_command/3,
+         local_command/4,
+         cluster_command/2,
+         cluster_command/3,
+         cluster_command/4
+        ]).
+
+-spec local_command(Module::atom(), Function::atom()) -> term().
+local_command(Module, Function) ->
+    local_command(Module, Function, []).
+
+-spec local_command(Module::atom(), Function::atom(), Args::[term()]) -> term().
+local_command(Module, Function, Args) ->
+    local_command(Module, Function, Args, 5000).
+
+-spec local_command(Module::atom(), Function::atom(), Args::[term()], Timeout::integer()) -> term().
+local_command(Module, Function, Args, Timeout) ->
+    lager:debug("Local RPC: ~p:~p(~p) [~p]", [Module, Function, Args, Timeout]),
+    rpc:call(nodename(), Module, Function, Args, Timeout).
+
+-spec cluster_command(Module::atom(), Function::atom()) -> term().
+cluster_command(Module, Function) ->
+    cluster_command(Module, Function, []).
+
+-spec cluster_command(Module::atom(), Function::atom(), Args::[term()]) -> term().
+cluster_command(Module, Function, Args) ->
+    local_command(Module, Function, Args, 5000).
+
+-spec cluster_command(Module::atom(), Function::atom(), Args::[term()], Timeout::integer()) -> term().
+cluster_command(Module, Function, Args, Timeout) ->
+    lager:debug("Cluster RPC: ~p:~p(~p) [~p]", [Module, Function, Args, Timeout]),
+    Stats = stats(),
+    {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
+    rpc:multicall(RingMembers, Module, Function, Args, Timeout).
+
+
+-spec pid() -> string().
+pid() ->
+    local_command(os, getpid).
+
+-spec can_connect() -> true | false.
+can_connect() ->
+    case is_connected() of
+        true -> true;
+        false -> maybe_connect()
+    end.
+
+-spec stats() -> [proplists:property()].
+stats() ->
+    case has_stats() of
+        {ok, Stats} -> Stats;
+        _ -> fetch_stats()
+    end.
+
+%% Private functions
+is_connected() ->
+    Node = nodename(),
+    is_alive() andalso lists:member(Node, nodes()).
+
+maybe_connect() ->
+    case connect_failed() of
+        true -> false;
+        _ -> try_connect()
+    end.
+
+try_connect() ->
+    TargetNode = nodename(),
+    case is_alive() of
+        true -> ok;
+        _ -> start_net()
+    end,
+    case {net_kernel:hidden_connect_node(TargetNode), net_adm:ping(TargetNode)} of
+        {true, pong} ->
+            lager:debug("Connected to local Riak node ~p.", [TargetNode]),
+            true;
+        _ ->
+            application:set_env(riaknostic, connect_failed, true),
+            lager:warning("Could not connect to the local Riak node ~p, some checks will not run.", [TargetNode]),
+            false
+    end.
+
+connect_failed() ->
+    case application:get_env(riaknostic, connect_failed) of
+        {ok, true} -> true;
+        _ -> false
+    end.
+
+start_net() ->
+    {Type, RiakName} = riaknostic_config:node_name(),
+    ThisNode = append_node_suffix(RiakName, "_diag"),
+    {ok, _} = net_kernel:start([ThisNode, Type]),
+    erlang:set_cookie(node(), riaknostic_config:cookie()).
+
+nodename() ->
+    {_, Name} = riaknostic_config:node_name(),
+    case string:tokens(Name, "@") of
+        [_Node, _Host] ->
+            list_to_atom(Name);
+        [Node] ->
+            [_, Host] = string:tokens(atom_to_list(node()), "@"),
+            list_to_atom(lists:concat([Node, "@", Host]))
+    end.
+
+append_node_suffix(Name, Suffix) ->
+    case string:tokens(Name, "@") of
+        [Node, Host] ->
+            list_to_atom(lists:concat([Node, Suffix, os:getpid(), "@", Host]));
+        [Node] ->
+            list_to_atom(lists:concat([Node, Suffix, os:getpid()]))
+    end.
+
+has_stats() ->
+    case application:get_env(riaknostic, local_stats) of
+        {ok, Stats} ->
+            {ok, Stats};
+        undefined ->
+            false
+    end.
+
+fetch_stats() ->
+    lager:debug("Fetching local riak_kv_status."),
+    case local_command(riak_kv_status, statistics) of
+        [] -> [];
+        PList ->
+            application:set_env(riaknostic, local_stats, PList),
+            PList
+    end.
+            
