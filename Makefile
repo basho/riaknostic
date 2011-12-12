@@ -24,7 +24,7 @@ escriptize:
 ## Doc targets
 ##
 docs:
-	./rebar doc
+	./rebar doc skip_deps=true
 
 APPS = kernel stdlib sasl erts ssl tools os_mon runtime_tools crypto inets \
 	xmerl webtool snmp public_key mnesia eunit syntax_tools compiler
