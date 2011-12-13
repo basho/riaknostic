@@ -19,6 +19,10 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+
+%% @doc Diagnostic that checks permissions on data directories and
+%% whether noatime is set.  It will only check data directories of
+%% known storage backends.
 -module(riaknostic_check_disk).
 -behaviour(riaknostic_check).
 
@@ -43,7 +47,7 @@
 description() ->
     "Data directory permissions and atime".
 
--spec valid() -> true | false.
+-spec valid() -> boolean().
 valid() ->
     true.
 
@@ -56,9 +60,9 @@ check() ->
                   end,
                   DataDirs).
 
--spec format(term()) -> iolist() | {io:format(), [term()]}.
+-spec format(term()) -> iodata() | {io:format(), [term()]}.
 format({disk_full, DataDir}) ->
-    {"Disk containing data directory ~s is full! " 
+    {"Disk containing data directory ~s is full! "
      "Please check that it is set to the correct location and that there are not "
      "other files using up space intended for Riak.", [DataDir]};
 format({no_data_dir, DataDir}) ->

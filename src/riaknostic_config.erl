@@ -19,6 +19,14 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+
+%% @doc Provides convenient access to Riak configuration values.  When
+%% the {@link riaknostic. riaknostic} module calls {@link
+%% prepare/0. prepare/0}, Riak's <code>app.config</code> and
+%% <code>vm.args</code> files will be parsed and memoized, and lager
+%% will be started on the console at the configured severity level.
+%% @end
+
 -module(riaknostic_config).
 
 -export([prepare/0,
@@ -33,7 +41,8 @@
          user/0]).
 
 %% @doc Prepares appropriate configuration so the riaknostic script
-%%      can run.
+%%      can run.  This is called by the riaknostic module and you do
+%%      not need to invoke it.
 -spec prepare() -> ok | {error, iodata()}.
 prepare() ->
     prepare([fun start_lager/0, fun load_app_config/0, fun load_vm_args/0]).
@@ -48,7 +57,7 @@ prepare([Fun|T]) ->
             prepare(T)
     end.
 
-%% @doc Determine where Riak is configured to store data. Returns a
+%% @doc Determines where Riak is configured to store data. Returns a
 %%      list of paths to directories defined by storage backends.
 -spec data_directories() -> [ file:filename() ].
 data_directories() ->
@@ -63,7 +72,9 @@ data_directories() ->
     [ filename:absname(Dir, base_dir()) || Dir <- Dirs, Dir =/= undefined ].
 
 %% @doc Get a key out of the app.config file, or if it doesn't exist,
-%%      return the Default. See also get_app_env/2.
+%% return the Default. You specify a nested key using a list of atoms,
+%% e.g. <code>[riak_kv, storage_backend]</code>.
+%% @see get_app_env/1
 -spec get_app_env([atom()], term()) -> term().
 get_app_env(Keys, Default) ->
     case get_app_env(Keys) of
@@ -73,7 +84,9 @@ get_app_env(Keys, Default) ->
             Value
     end.
 
-%% @doc Get a key out of the app.config file.
+%% @doc Get a key out of the app.config file. You specify a nested
+%% key using a list of atoms, e.g. <code>[riak_kv, storage_backend]</code>.
+%% @equiv get_app_env(Keys, undefined)
 -spec get_app_env([atom()]) -> undefined | term().
 get_app_env(Keys) ->
     {ok, Env} = application:get_env(riaknostic, app_config),
@@ -99,6 +112,7 @@ user() ->
     end.
 
 %% @doc The base directory from which the Riak script runs.
+-spec base_dir() -> file:filename().
 base_dir() ->
     case application:get_env(riaknostic, base) of
         undefined ->
@@ -108,6 +122,7 @@ base_dir() ->
     end.
 
 %% @doc The Riak configuration directory.
+-spec etc_dir() -> file:filename().
 etc_dir() ->
     case application:get_env(riaknostic, etc) of
         undefined ->
@@ -116,7 +131,9 @@ etc_dir() ->
             filename:absname(Path, base_dir())
     end.
 
-%% @doc The local Riak node name
+%% @doc The local Riak node name. Includes whether the node uses short
+%% or long nodenames for distributed Erlang.
+-spec node_name() -> {shortnames | longnames, Name::string()}.
 node_name() ->
     case application:get_env(riaknostic, node_name) of
         undefined ->
@@ -125,6 +142,8 @@ node_name() ->
             Node
     end.
 
+%% @doc The Riak node's distributed Erlang cookie.
+-spec cookie() -> atom().
 cookie() ->
     case application:get_env(riaknostic, cookie) of
         undefined ->
@@ -132,8 +151,8 @@ cookie() ->
         {ok, Cookie} ->
             list_to_atom(Cookie)
     end.
-%% Private functions
 
+%% Private functions
 start_lager() ->
     application:load(lager),
     case application:get_env(riaknostic, log_level) of
@@ -141,7 +160,6 @@ start_lager() ->
             {error, "Log level not set!"};
         {ok, Level} ->
             application:set_env(lager, crash_log, undefined),
-            %% application:set_env(lager, error_logger_redirect, false),
             application:set_env(lager, handlers, [{lager_console_backend, Level}]),
             lager:start()
     end.
@@ -220,7 +238,7 @@ find_nested_key([], Val) ->
     Val;
 find_nested_key([Key|T], PList) ->
     find_nested_key(T, proplists:get_value(Key, PList)).
-                    
+
 %% Determine the data directory(ies) for the configured storage backend
 -spec data_directory(atom()) -> [ file:filename() ].
 data_directory(riak_kv_bitcask_backend) ->

@@ -19,6 +19,8 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+
+%% @doc Diagnostic check that detects cluster members that are down.
 -module(riaknostic_check_nodes_connected).
 -behaviour(riaknostic_check).
 
@@ -27,12 +29,15 @@
          check/0,
          format/1]).
 
+-spec description() -> iodata().
 description() ->
     "Cluster node liveness".
 
+-spec valid() -> boolean().
 valid() ->
     riaknostic_node:can_connect().
 
+-spec check() -> [{lager:log_level(), term()}].
 check() ->
     Stats = riaknostic_node:stats(),
     {connected_nodes, ConnectedNodes} = lists:keyfind(connected_nodes, 1, Stats),
@@ -43,5 +48,6 @@ check() ->
                                            N =/= NodeName,
                                            lists:member(N, ConnectedNodes) == false].
 
+-spec format(term()) -> iodata() | {io:format(), [term()]}.
 format({node_disconnected, Node}) ->
     {"Cluster member ~s is not connected to this node. Please check whether it is down.", [Node]}.

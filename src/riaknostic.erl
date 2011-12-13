@@ -19,6 +19,38 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+
+%% @doc <p>The <code>riaknostic</code> module is the entry point for
+%% the escript. It is responsible for parsing command-line arguments
+%% and switches, printing the available checks, listing the help text,
+%% or running all or the specified checks, depending on the command
+%% line.</p>
+%%
+%% <p>The <code>getopt</code> application and module is used
+%% for command-line parsing. The defined switches and arguments are:</p>
+%% <pre>$ ./riaknostic --etc etc --base base --user user [-d level] [-l] [-h] [check_name...]</pre>
+%%
+%% <table class="options">
+%% <tr><td><code>--etc etc</code></td><td>the location of the Riak
+%%   configuration directory (set automatically by
+%%   <code>riak-admin</code>)</td></tr>
+%% <tr><td><code>--base base</code></td><td>the base directory of
+%%   Riak, aka <code>RUNNER_BASE_DIR</code> (set automatically by
+%%   <code>riak-admin</code>)</td></tr>
+%% <tr><td><code>--user user</code></td><td>the user that Riak runs as
+%%   (set automatically by <code>riak-admin</code>)</td></tr>
+%% <tr><td><code>-d, --level level</code>&#160;&#160;</td><td>the severity of
+%%   messages you want to see, defaulting to 'notice'. Equivalent to
+%%   syslog/<code>lager</code> severity levels.</td></tr>
+%% <tr><td><code>-l, --list</code></td><td>lists available checks,
+%%   that is, modules that implement <code>riaknostic_check</code>. A
+%%   "short name" will be given for ease-of-use.</td></tr>
+%% <tr><td><code>-h, --help</code></td><td> - print command usage
+%%   ("help")</td></tr>
+%% <tr><td><code>check_name</code></td><td>when given, a specific
+%%   check or list of checks to run</td></tr>
+%% </table>
+%% @end
 -module(riaknostic).
 -export([main/1]).
 
@@ -34,7 +66,8 @@
 -define(USAGE_OPTS, [ O || O <- ?OPTS,
                            element(5,O) =/= undefined]).
 
-%% The main entry point for the riaknostic script.
+%% @doc The main entry point for the riaknostic escript.
+-spec main(CommandLineArguments::[string()]) -> any().
 main(Args) ->
     application:load(riaknostic),
 
@@ -83,7 +116,7 @@ run(InputChecks) ->
         [] ->
             halt(0);
         _ ->
-            %% Print the most critical messages first
+%% Print the most critical messages first
             LogLevelNum = lager:minimum_loglevel(lager:get_loglevels()),
             FilteredMessages = lists:filter(fun({Level,_,_}) ->
                                                     lager_util:level_to_num(Level) =< LogLevelNum

@@ -19,6 +19,10 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+
+%% @doc Diagnostic that checks Riak's current memory usage. If memory
+%% usage is high, a warning message will be sent, otherwise only
+%% informational messages.
 -module(riaknostic_check_memory_use).
 -behaviour(riaknostic_check).
 
@@ -27,12 +31,15 @@
          check/0,
          format/1]).
 
+-spec description() -> iodata().
 description() ->
     "Measure memory usage".
 
+-spec valid() -> boolean().
 valid() ->
     riaknostic_node:can_connect().
 
+-spec check() -> [{lager:log_level(), term()}].
 check() ->
     Stats = riaknostic_node:stats(),
     {mem_total, MemTotal} = lists:keyfind(mem_total, 1, Stats),
@@ -51,6 +58,7 @@ check() ->
             [{critical, {high_memory, Percent}} | Messages]
     end.
 
+-spec format(term()) -> iodata() | {io:format(), [term()]}.
 format({high_memory, Percent}) ->
     {"Riak memory usage is HIGH: ~s% of available RAM", [Percent]};
 format({memory_allocated, Allocated, Total}) ->

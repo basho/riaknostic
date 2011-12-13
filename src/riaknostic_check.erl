@@ -20,18 +20,15 @@
 %%
 %% -------------------------------------------------------------------
 
-%% Enforces a common API among all check modules.
+%% @doc Enforces a common API among all diagnostic modules and
+%% provides some automation around their execution.
 -module(riaknostic_check).
 -export([behaviour_info/1]).
 -export([check/1,
          modules/0,
          print/1]).
 
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
--compile(export_all).
--endif.
-
+%% @doc The behaviour definition for diagnostic modules.
 -spec behaviour_info(atom()) -> 'undefined' | [{atom(), arity()}].
 behaviour_info(callbacks) ->
     [{description, 0},
@@ -41,7 +38,9 @@ behaviour_info(callbacks) ->
 behaviour_info(_) ->
     undefined.
 
--spec check(module()) -> [{lager:log_level(), module(), term()}].
+%% @doc Runs the diagnostic in the given module, if it is valid. Returns a
+%% list of messages that will be printed later using print/1.
+-spec check(Module::module()) -> [{lager:log_level(), module(), term()}].
 check(Module) ->
     case Module:valid() of
         true ->
@@ -50,6 +49,8 @@ check(Module) ->
             []
     end.
 
+%% @doc Collects a list of diagnostic modules included in the
+%% riaknostic application.
 -spec modules() -> [module()].
 modules() ->
     {ok, Mods} = application:get_key(riaknostic, modules),
@@ -57,9 +58,14 @@ modules() ->
            Attr <- M:module_info(attributes),
            {behaviour, [?MODULE]} =:= Attr orelse {behavior, [?MODULE]} =:= Attr ].
 
--spec print({lager:log_level(), module(), term()}) -> ok.
-print({Level, Mod, Term}) ->
-    case Mod:format(Term) of
+
+%% @doc Formats and prints the given message via lager:log/3,4. The diagnostic
+%% module's format/1 function will be called to provide a
+%% human-readable message. It should return an iolist() or a 2-tuple
+%% consisting of a format string and a list of terms.
+-spec print({Level::lager:log_level(), Module::module(), Data::term()}) -> ok.
+print({Level, Mod, Data}) ->
+    case Mod:format(Data) of
         {Format, Terms} ->
             lager:log(Level, self(), Format, Terms);
         String ->

@@ -19,6 +19,10 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+
+%% @doc Diagnostic that detects the existence of Erlang-generated
+%% crash dumps. It will also check whether the location that the crash
+%% dump is written to has correct permissions.
 -module(riaknostic_check_dumps).
 -behaviour(riaknostic_check).
 

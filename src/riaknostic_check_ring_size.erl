@@ -19,6 +19,9 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+
+%% @doc Diagnostic that compares the configured
+%% <code>ring_creation_size</code> to the actual size of the ring.
 -module(riaknostic_check_ring_size).
 -behaviour(riaknostic_check).
 
@@ -27,12 +30,15 @@
          check/0,
          format/1]).
 
+-spec description() -> iodata().
 description() ->
     "Ring size valid".
 
+-spec valid() -> boolean().
 valid() ->
     riaknostic_node:can_connect().
 
+-spec check() -> [{lager:log_level(), term()}].
 check() ->
     Stats = riaknostic_node:stats(),
     {ring_creation_size, RingSize} = lists:keyfind(ring_creation_size, 1, Stats),
@@ -40,6 +46,7 @@ check() ->
 
     [ {notice, {ring_size_unequal, RingSize, NumPartitions}} || RingSize /= NumPartitions ].
 
+-spec format(term()) -> iodata() | {io:format(), [term()]}.
 format({ring_size_unequal, S, P}) ->
     {"The configured ring_creation_size (~B) is not equal to the number of partitions in the ring (~B). "
      "Please verify that the ring_creation_size in app.config is correct.", [S, P]}.

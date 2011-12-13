@@ -19,13 +19,24 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
--module(riaknostic_util).
--compile(export_all).
 
+%% @doc Utility functions for riaknostic.
+%% @end
+-module(riaknostic_util).
+-export([short_name/1,
+         run_command/1,
+         binary_to_float/1]).
+
+%% @doc Converts a check module name into a short name that can be
+%% used to refer to a check on the command line.  For example,
+%% <code>riaknostic_check_disk becomes</code> <code>"disk"</code>.
 -spec short_name(module()) -> iodata() | unicode:charlist().
 short_name(Mod) when is_atom(Mod) ->
     re:replace(atom_to_list(Mod), "riaknostic_check_", "", [{return, list}]).
 
+%% @doc Runs a shell command and returns the output. stderr is
+%% redirected to stdout so its output will be included.
+-spec run_command(Command::iodata()) -> StdOut::iodata().
 run_command(Command) ->
     lager:debug("Running shell command: ~s", [Command]),
     Port = erlang:open_port({spawn,Command},[exit_status, stderr_to_stdout]),
@@ -36,5 +47,8 @@ run_command(Command) ->
             StdOut
     end.
 
+%% @doc Converts a binary containing a text representation of a float
+%% into a float type.
+-spec binary_to_float(binary()) -> float().
 binary_to_float(Bin) ->
     list_to_float(binary_to_list(Bin)).

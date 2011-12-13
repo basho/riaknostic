@@ -19,6 +19,10 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+
+%% @doc Diagnostic that checks whether the local node is a member of
+%% the ring. This might arise when the node name in vm.args has
+%% changed but the node has not been renamed in the ring.
 -module(riaknostic_check_ring_membership).
 -behaviour(riaknostic_check).
 
@@ -27,12 +31,15 @@
          check/0,
          format/1]).
 
+-spec description() -> iodata().
 description() ->
     "Cluster membership validity".
-    
+
+-spec valid() -> boolean().
 valid() ->
     riaknostic_node:can_connect().
 
+-spec check() -> [{lager:log_level(), term()}].
 check() ->
     Stats = riaknostic_node:stats(),
     {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
@@ -44,5 +51,6 @@ check() ->
             [{warning, {not_ring_member, NodeName}}]
     end.
 
+-spec format(term()) -> iodata() | {io:format(), [term()]}.
 format({not_ring_member, Nodename}) ->
     {"Local node ~w is not a member of the ring. Please check that the -name setting in vm.args is correct.", [Nodename]}.
