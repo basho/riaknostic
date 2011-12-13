@@ -20,8 +20,35 @@
 %%
 %% -------------------------------------------------------------------
 
-%% @doc Enforces a common API among all diagnostic modules and
-%% provides some automation around their execution.
+%% @doc <p>Enforces a common API among all diagnostic modules and
+%% provides some automation around their execution.</p>
+%% <h2>Behaviour Specification</h2>
+%%
+%% <h3>description/0</h3>
+%% <pre>-spec description() -> iodata().</pre>
+%% <p>A short description of what the diagnostic does, which will be
+%% printed when the script is given the <code>-l</code> flag.</p>
+%%
+%% <h3>valid/0</h3>
+%% <pre>-spec valid() -> boolean().</pre>
+%% <p>Whether the diagnostic is valid to run. For example, some checks
+%% require connectivity to the Riak node and hence call {@link
+%% riaknostic_node:can_connect/0. riaknostic_node:can_connect()}.</p>
+%%
+%% <h3>check/0</h3>
+%% <pre>-spec check() -> [{lager:log_level(), term()}].</pre>
+%% <p>Runs the diagnostic, returning a list of pairs, where the first
+%% is a severity level and the second is any term that is understood
+%% by the <code>format/1</code> callback.</p>
+%%
+%% <h3>format/1</h3>
+%% <pre>-spec format(term()) -> iodata() | {io:format(), [term()]}.</pre>
+%% <p>Formats terms that were returned from <code>check/0</code> for
+%% output to the console. Valid return values are an iolist (string,
+%% binary, etc) or a pair of a format string and a list of terms, as
+%% you would pass to {@link io:format/2. io:format/2}.</p>
+%% @end
+
 -module(riaknostic_check).
 -export([behaviour_info/1]).
 -export([check/1,
