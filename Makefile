@@ -45,7 +45,13 @@ pages: docs
 ##
 ## Release targets
 ##
-# package: all docs
+VSN = `grep vsn src/riaknostic.app.src | cut -f 2 -d "\""`
+
+package: all docs
+	@mkdir -p pkg/riaknostic
+	@rm -rf pkg/riaknostic/*
+	@cat .manifest | xargs -n 1 -J % cp -R % pkg/riaknostic/.
+	@tar -czf pkg/riaknostic-$(VSN).tar.gz -C pkg riaknostic
 
 ##
 ## Dialyzer targets

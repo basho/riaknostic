@@ -6,3 +6,4 @@ edoc/
 index.html
 riaknostic
 *.png
+pkg/
