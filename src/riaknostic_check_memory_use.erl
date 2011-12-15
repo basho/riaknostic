@@ -41,14 +41,10 @@ valid() ->
 
 -spec check() -> [{lager:log_level(), term()}].
 check() ->
-    Stats = riaknostic_node:stats(),
-    {mem_total, MemTotal} = lists:keyfind(mem_total, 1, Stats),
-    {mem_allocated, MemAllocated} = lists:keyfind(mem_allocated, 1, Stats),
     Pid = riaknostic_node:pid(),
     Output = riaknostic_util:run_command("ps -o pmem,rss,command -p " ++ Pid),
     [_,_,_,Percent, RealSize| _] = re:split(Output, "[ ]+"),
     Messages = [
-                {info, {memory_allocated, MemAllocated, MemTotal}},
                 {info, {process_usage, Percent, RealSize}}
                ],
     case riaknostic_util:binary_to_float(Percent) >= 90 of
@@ -61,7 +57,5 @@ check() ->
 -spec format(term()) -> iodata() | {io:format(), [term()]}.
 format({high_memory, Percent}) ->
     {"Riak memory usage is HIGH: ~s% of available RAM", [Percent]};
-format({memory_allocated, Allocated, Total}) ->
-    {"Riak has allocated ~p KB of ~p KB", [Allocated div 1024, Total div 1024]};
 format({process_usage, Percent, Real}) ->
     {"Riak process is using ~s% of available RAM, totalling ~s KB of real memory.", [Percent, Real]}.
