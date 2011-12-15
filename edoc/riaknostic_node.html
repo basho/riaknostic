@@ -9,19 +9,33 @@
 <hr>
 
 <h1>Module riaknostic_node</h1>
-<ul class="index"><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>
+<ul class="index"><li><a href="#description">Description</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>Functions that help diagnostics interact with the local Riak
+  node or other members of the cluster.
 
 
+<h2><a name="description">Description</a></h2>Functions that help diagnostics interact with the local Riak
+  node or other members of the cluster.
 <h2><a name="index">Function Index</a></h2>
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#can_connect-0">can_connect/0</a></td><td></td></tr>
-<tr><td valign="top"><a href="#cluster_command-2">cluster_command/2</a></td><td></td></tr>
-<tr><td valign="top"><a href="#cluster_command-3">cluster_command/3</a></td><td></td></tr>
-<tr><td valign="top"><a href="#cluster_command-4">cluster_command/4</a></td><td></td></tr>
-<tr><td valign="top"><a href="#local_command-2">local_command/2</a></td><td></td></tr>
-<tr><td valign="top"><a href="#local_command-3">local_command/3</a></td><td></td></tr>
-<tr><td valign="top"><a href="#local_command-4">local_command/4</a></td><td></td></tr>
-<tr><td valign="top"><a href="#pid-0">pid/0</a></td><td></td></tr>
-<tr><td valign="top"><a href="#stats-0">stats/0</a></td><td></td></tr>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#can_connect-0">can_connect/0</a></td><td>Attempts to connect to the local Riak node if it is not
+  already, and returns whether connection was successful.</td></tr>
+<tr><td valign="top"><a href="#cluster_command-2">cluster_command/2</a></td><td>Calls the given 0-arity module and function on all members of
+  the Riak cluster.</td></tr>
+<tr><td valign="top"><a href="#cluster_command-3">cluster_command/3</a></td><td>Calls the given module and function with the given arguments
+  on all members of the Riak cluster.</td></tr>
+<tr><td valign="top"><a href="#cluster_command-4">cluster_command/4</a></td><td>Calls the given module and function with the given arguments
+  on all members for the Riak cluster, returning an error if the call
+  doesn't complete within the given timeout.</td></tr>
+<tr><td valign="top"><a href="#local_command-2">local_command/2</a></td><td>Calls the given 0-arity module and function on the local Riak
+  node and returns the result of that call.</td></tr>
+<tr><td valign="top"><a href="#local_command-3">local_command/3</a></td><td>Calls the given module and function with the given arguments
+  on the local Riak node and returns the result of that call.</td></tr>
+<tr><td valign="top"><a href="#local_command-4">local_command/4</a></td><td>Calls the given module and function with the given arguments
+  on the local Riak node and returns the result of that call,
+  returning an error if the call doesn't complete within the given
+  timeout.</td></tr>
+<tr><td valign="top"><a href="#pid-0">pid/0</a></td><td>Retrieves the operating system's process ID of the local Riak
+  node.</td></tr>
+<tr><td valign="top"><a href="#stats-0">stats/0</a></td><td>Fetches or returns previously fetched Riak statistics.</td></tr>
 </table>
 
 <h2><a name="functions">Function Details</a></h2>
@@ -29,50 +43,77 @@
 <h3 class="function"><a name="can_connect-0">can_connect/0</a></h3>
 <div class="spec">
 <p><tt>can_connect() -&gt; true | false</tt><br></p>
-</div>
+</div><p>Attempts to connect to the local Riak node if it is not
+  already, and returns whether connection was successful.</p>
 
 <h3 class="function"><a name="cluster_command-2">cluster_command/2</a></h3>
 <div class="spec">
 <p><tt>cluster_command(Module::atom(), Function::atom()) -&gt; term()</tt><br></p>
-</div>
+</div><p>Equivalent to <a href="#cluster_command-3"><tt>cluster_command(Module, Function, [])</tt></a>.</p>
+<p>Calls the given 0-arity module and function on all members of
+  the Riak cluster.</p>
+<p><b>See also:</b> <a href="#can_connect-0">can_connect/0</a>.</p>
 
 <h3 class="function"><a name="cluster_command-3">cluster_command/3</a></h3>
 <div class="spec">
 <p><tt>cluster_command(Module::atom(), Function::atom(), Args::[term()]) -&gt; term()</tt><br></p>
-</div>
+</div><p>Equivalent to <a href="#cluster_command-4"><tt>cluster_command(Module, Function, Args, 5000)</tt></a>.</p>
+<p>Calls the given module and function with the given arguments
+  on all members of the Riak cluster.</p>
+<p><b>See also:</b> <a href="#can_connect-0">can_connect/0</a>.</p>
 
 <h3 class="function"><a name="cluster_command-4">cluster_command/4</a></h3>
 <div class="spec">
 <p><tt>cluster_command(Module::atom(), Function::atom(), Args::[term()], Timeout::integer()) -&gt; term()</tt><br></p>
-</div>
+</div><p>Equivalent to <a href="rpc.html#multicall-5"><tt>rpc:multicall(RiakClusterMembers, Module, Function,
+	      Args, Timeout)</tt></a>.</p>
+<p>Calls the given module and function with the given arguments
+  on all members for the Riak cluster, returning an error if the call
+  doesn't complete within the given timeout.</p>
+<p><b>See also:</b> <a href="#can_connect-0">can_connect/0</a>.</p>
 
 <h3 class="function"><a name="local_command-2">local_command/2</a></h3>
 <div class="spec">
 <p><tt>local_command(Module::atom(), Function::atom()) -&gt; term()</tt><br></p>
-</div>
+</div><p>Equivalent to <a href="#local_command-3"><tt>local_command(Module, Function, [])</tt></a>.</p>
+<p>Calls the given 0-arity module and function on the local Riak
+  node and returns the result of that call.</p>
+<p><b>See also:</b> <a href="#can_connect-0">can_connect/0</a>.</p>
 
 <h3 class="function"><a name="local_command-3">local_command/3</a></h3>
 <div class="spec">
 <p><tt>local_command(Module::atom(), Function::atom(), Args::[term()]) -&gt; term()</tt><br></p>
-</div>
+</div><p>Equivalent to <a href="#local_command-4"><tt>local_command(Module, Function, Args, 5000)</tt></a>.</p>
+<p>Calls the given module and function with the given arguments
+  on the local Riak node and returns the result of that call.</p>
+<p><b>See also:</b> <a href="#can_connect-0">can_connect/0</a>.</p>
 
 <h3 class="function"><a name="local_command-4">local_command/4</a></h3>
 <div class="spec">
 <p><tt>local_command(Module::atom(), Function::atom(), Args::[term()], Timeout::integer()) -&gt; term()</tt><br></p>
-</div>
+</div><p>Equivalent to <a href="rpc.html#call-5"><tt>rpc:call(RiakNodeName, Module, Function, Args, Timeout)</tt></a>.</p>
+<p>Calls the given module and function with the given arguments
+  on the local Riak node and returns the result of that call,
+  returning an error if the call doesn't complete within the given
+  timeout.</p>
+<p><b>See also:</b> <a href="#can_connect-0">can_connect/0</a>.</p>
 
 <h3 class="function"><a name="pid-0">pid/0</a></h3>
 <div class="spec">
 <p><tt>pid() -&gt; string()</tt><br></p>
-</div>
+</div><p>Equivalent to <a href="#local_command-2"><tt>local_command(os, getpid)</tt></a>.</p>
+<p>Retrieves the operating system's process ID of the local Riak
+  node.</p>
+<p><b>See also:</b> <a href="#can_connect-0">can_connect/0</a>.</p>
 
 <h3 class="function"><a name="stats-0">stats/0</a></h3>
 <div class="spec">
 <p><tt>stats() -&gt; [<a href="proplists.html#type-property">proplists:property()</a>]</tt><br></p>
-</div>
+</div><p>Fetches or returns previously fetched Riak statistics.</p>
+<p><b>See also:</b> <a href="#can_connect-0">can_connect/0</a>.</p>
 <hr>
 
 <div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
-<p><i>Generated by EDoc, Dec 15 2011, 10:54:02.</i></p>
+<p><i>Generated by EDoc, Dec 15 2011, 16:52:50.</i></p>
 </body>
 </html>
