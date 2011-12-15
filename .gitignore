@@ -1,5 +1,7 @@
 doc/
+deps/
 ebin/
 src/
-priv/
+priv/*
+Makefile
 riaknostic

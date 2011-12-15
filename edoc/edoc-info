@@ -1,0 +1,7 @@
+{application,riaknostic}.
+{packages,[]}.
+{modules,[riaknostic,riaknostic_check,riaknostic_check_disk,
+          riaknostic_check_dumps,riaknostic_check_memory_use,
+          riaknostic_check_nodes_connected,riaknostic_check_ring_membership,
+          riaknostic_check_ring_size,riaknostic_config,riaknostic_node,
+          riaknostic_util]}.
