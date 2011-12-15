@@ -51,7 +51,7 @@ check() ->
 
     lists:append([
       [ {notice, {ring_size_unequal, RingSize, NumPartitions}} || RingSize /= NumPartitions ],
-      [ {notice, {ring_size_inappropriate, RingSize}} || (RingSize rem 2) /= 0 ],
+      [ {critical, {ring_size_inappropriate, RingSize}} || (RingSize band -(bnot RingSize)) /= RingSize],
       [ {notice, {ring_size_too_small, RingSize, NumRingMembers}} || VnodesPerNode =< MinAcceptableVnodesPerNode ],
       [ {notice, {too_few_nodes_for_ring, RingSize, NumRingMembers}} || VnodesPerNode >= MaxRecommendedVnodesPerNode ] ]).
 
