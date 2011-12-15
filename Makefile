@@ -28,8 +28,10 @@ docs:
 
 pages: docs
 	cp priv/index.html doc/_index.html
+	cp priv/ForkMe_Blk.png doc/
 	git checkout gh-pages
 	mv doc/_index.html ./index.html
+	mv doc/ForkMe_Blk.png .
 	rm -rf edoc/*
 	cp -R doc/* edoc/
 	git add -u .
@@ -37,6 +39,14 @@ pages: docs
 	git push origin gh-pages
 	git checkout master
 
+##
+## Release targets
+##
+# package: all docs
+
+##
+## Dialyzer targets
+##
 APPS = kernel stdlib sasl erts ssl tools os_mon runtime_tools crypto inets \
 	xmerl webtool snmp public_key mnesia eunit syntax_tools compiler
 COMBO_PLT = $(HOME)/.riak_combo_dialyzer_plt
