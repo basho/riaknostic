@@ -19,6 +19,9 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
+
+%% @doc Functions that help diagnostics interact with the local Riak
+%% node or other members of the cluster.
 -module(riaknostic_node).
 
 -export([can_connect/0,
@@ -32,27 +35,54 @@
          cluster_command/4
         ]).
 
+%% @doc Calls the given 0-arity module and function on the local Riak
+%% node and returns the result of that call.
+%% @equiv local_command(Module, Function, [])
+%% @see can_connect/0.
 -spec local_command(Module::atom(), Function::atom()) -> term().
 local_command(Module, Function) ->
     local_command(Module, Function, []).
 
+%% @doc Calls the given module and function with the given arguments
+%% on the local Riak node and returns the result of that call.
+%% @equiv local_command(Module, Function, Args, 5000)
+%% @see can_connect/0
 -spec local_command(Module::atom(), Function::atom(), Args::[term()]) -> term().
 local_command(Module, Function, Args) ->
     local_command(Module, Function, Args, 5000).
 
+%% @doc Calls the given module and function with the given arguments
+%% on the local Riak node and returns the result of that call,
+%% returning an error if the call doesn't complete within the given
+%% timeout.
+%% @equiv rpc:call(RiakNodeName, Module, Function, Args, Timeout)
+%% @see can_connect/0
 -spec local_command(Module::atom(), Function::atom(), Args::[term()], Timeout::integer()) -> term().
 local_command(Module, Function, Args, Timeout) ->
     lager:debug("Local RPC: ~p:~p(~p) [~p]", [Module, Function, Args, Timeout]),
     rpc:call(nodename(), Module, Function, Args, Timeout).
 
+%% @doc Calls the given 0-arity module and function on all members of
+%% the Riak cluster.
+%% @equiv cluster_command(Module, Function, [])
+%% @see can_connect/0
 -spec cluster_command(Module::atom(), Function::atom()) -> term().
 cluster_command(Module, Function) ->
     cluster_command(Module, Function, []).
 
+%% @doc Calls the given module and function with the given arguments
+%% on all members of the Riak cluster.
+%% @equiv cluster_command(Module, Function, Args, 5000)
+%% @see can_connect/0
 -spec cluster_command(Module::atom(), Function::atom(), Args::[term()]) -> term().
 cluster_command(Module, Function, Args) ->
     local_command(Module, Function, Args, 5000).
 
+%% @doc Calls the given module and function with the given arguments
+%% on all members for the Riak cluster, returning an error if the call
+%% doesn't complete within the given timeout.
+%% @equiv rpc:multicall(RiakClusterMembers, Module, Function, Args, Timeout)
+%% @see can_connect/0
 -spec cluster_command(Module::atom(), Function::atom(), Args::[term()], Timeout::integer()) -> term().
 cluster_command(Module, Function, Args, Timeout) ->
     lager:debug("Cluster RPC: ~p:~p(~p) [~p]", [Module, Function, Args, Timeout]),
@@ -60,11 +90,16 @@ cluster_command(Module, Function, Args, Timeout) ->
     {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
     rpc:multicall(RingMembers, Module, Function, Args, Timeout).
 
-
+%% @doc Retrieves the operating system's process ID of the local Riak
+%% node.
+%% @equiv local_command(os, getpid)
+%% @see can_connect/0
 -spec pid() -> string().
 pid() ->
     local_command(os, getpid).
 
+%% @doc Attempts to connect to the local Riak node if it is not
+%% already, and returns whether connection was successful.
 -spec can_connect() -> true | false.
 can_connect() ->
     case is_connected() of
@@ -74,6 +109,8 @@ can_connect() ->
             maybe_connect()
     end.
 
+%% @doc Fetches or returns previously fetched Riak statistics.
+%% @see can_connect/0
 -spec stats() -> [proplists:property()].
 stats() ->
     case has_stats() of
