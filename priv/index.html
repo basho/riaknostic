@@ -143,37 +143,37 @@ Available diagnostic checks:
             <p>Have an idea for a diagnostic? Want to improve the way
               Riaknostic works? Fork
               the <a href="https://github.com/basho/riaknostic">github
-                repository</a> and send us a pull-request with your changes!
-              The code is documented
-              with <a href="http://www.erlang.org/doc/apps/edoc/index.html">edoc</a>,
-              so give the <a href="/edoc/index.html">API Docs</a> a read
-              before you contribute.</p>
+              repository</a> and send us a pull-request with your
+              changes!  The code is documented with <code>edoc</code>,
+              so give the <a href="edoc/index.html">API Docs</a> a
+              read before you contribute.</p>
             <p>If you want to run the <code>riaknostic</code> script
               while developing and you don't have it hooked up to your
               local Riak, you can invoke it directly like so:</p>
             <pre>$ ./riaknostic --etc ~/code/riak/rel/riak/etc --base ~/code/riak/rel/riak --user `whoami` [other options]</pre>
             <p>Those extra options are usually assigned by
-              the <code>riak-admin</code> script for you, but here's how
-              to set them:</p>
+              the <code>riak-admin</code> script for you, but here's
+              how to set them:</p>
             <table class="zebra-striped">
               <tr>
                 <td class="span2"><code>--etc</code></td>
                 <td>Where your Riak configuration directory is, in the
-                  example above it's in the generated directory of a source
-                  checkout of Riak.</td>
+                  example above it's in the generated directory of a
+                  source checkout of Riak.</td>
               </tr>
               <tr>
                 <td><code>--base</code></td>
-                <td>The "base" directory of Riak, usually the root of the
-                  generated directory or <code>/usr/lib/riak</code> on
-                  Linux, for example. Scan the <code>riak-admin</code>
-                  script for how the <code>RUNNER_BASE_DIR</code> variable
-                  is assigned on your platform.</td>
+                <td>The "base" directory of Riak, usually the root of
+                  the generated directory
+                  or <code>/usr/lib/riak</code> on Linux, for
+                  example. Scan the <code>riak-admin</code> script for
+                  how the <code>RUNNER_BASE_DIR</code> variable is
+                  assigned on your platform.</td>
               </tr>
               <tr>
                 <td><code>--user</code></td>
-                <td>What user/UID the Riak node runs as. In a source checkout,
-                  it's the current user, on most systems,
+                <td>What user/UID the Riak node runs as. In a source
+                  checkout, it's the current user, on most systems,
                   it's <code>riak</code>.</td>
               </tr>
             </table>
