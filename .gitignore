@@ -7,3 +7,5 @@ Makefile
 riaknostic
 rebar
 rebar.config
+.manifest
+pkg/
