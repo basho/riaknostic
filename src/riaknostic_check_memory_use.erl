@@ -43,7 +43,7 @@ valid() ->
 check() ->
     Pid = riaknostic_node:pid(),
     Output = riaknostic_util:run_command("ps -o pmem,rss -p " ++ Pid),
-    [_,_,Percent, RealSize| _] = re:split(Output, "[ ]+"),
+    [_,_,Percent, RealSize| _] = re:split(Output, "\s+|\$"),
     Messages = [
                 {info, {process_usage, Percent, RealSize}}
                ],
