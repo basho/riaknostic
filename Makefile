@@ -34,7 +34,8 @@ pages: docs
 	mv doc/ForkMe_Blk.png .
 	rm -rf edoc/*
 	cp -R doc/* edoc/
-	git add -u .
+	git add .
+	git add -u
 	git commit
 	git push origin gh-pages
 	git checkout master
