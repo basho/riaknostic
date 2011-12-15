@@ -2,4 +2,6 @@ doc/
 deps/
 ebin/*
 log/
+edoc/
+index.html
 riaknostic
