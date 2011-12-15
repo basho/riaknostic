@@ -42,8 +42,8 @@ valid() ->
 -spec check() -> [{lager:log_level(), term()}].
 check() ->
     Pid = riaknostic_node:pid(),
-    Output = riaknostic_util:run_command("ps -o pmem,rss,command -p " ++ Pid),
-    [_,_,_,Percent, RealSize| _] = re:split(Output, "[ ]+"),
+    Output = riaknostic_util:run_command("ps -o pmem,rss -p " ++ Pid),
+    [_,_,Percent, RealSize| _] = re:split(Output, "[ ]+"),
     Messages = [
                 {info, {process_usage, Percent, RealSize}}
                ],
