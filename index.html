@@ -117,8 +117,6 @@ Available diagnostic checks:
 18:34:20.781 [debug] Supervisor inet_gethost_native_sup started undefined at pid <0.49.0>
 18:34:20.782 [debug] Supervisor kernel_safe_sup started inet_gethost_native:start_link() at pid <0.48.0>
 18:34:20.834 [debug] Connected to local Riak node 'riak@127.0.0.1'.
-18:34:20.834 [debug] Fetching local riak_kv_status.
-18:34:20.834 [debug] Local RPC: riak_kv_status:statistics([]) [5000]
 18:34:20.939 [debug] Local RPC: os:getpid([]) [5000]
 18:34:20.939 [debug] Running shell command: ps -o pmem,rss,command -p 83144
 18:34:20.946 [debug] Shell command output: 
@@ -127,7 +125,6 @@ Available diagnostic checks:
 
 18:34:20.960 [warning] Riak crashed at Wed, 07 Dec 2011 21:47:50 GMT, leaving crash dump in /srv/riak/log/erl_crash.dump. Please inspect or remove the file.
 18:34:20.961 [notice] Data directory /srv/riak/data/bitcask is not mounted with 'noatime'. Please remount its disk with the 'noatime' flag to improve performance.
-18:34:20.961 [info] Riak has allocated 3614558 KB of 6529828 KB
 18:34:20.961 [info] Riak process is using 0.4% of available RAM, totalling 31004 KB of real memory.</pre>
             <p>Most times you'll want to use the defaults, but any
               Syslog severity name will do (from most to least
