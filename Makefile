@@ -26,6 +26,17 @@ escriptize:
 docs:
 	./rebar doc skip_deps=true
 
+pages: docs
+	cp priv/index.html doc/_index.html
+	git checkout gh-pages
+	mv doc/_index.html ./index.html
+	rm -rf edoc/*
+	cp -R doc/* edoc/
+	git add -u .
+	git commit
+	git push origin gh-pages
+	git checkout master
+
 APPS = kernel stdlib sasl erts ssl tools os_mon runtime_tools crypto inets \
 	xmerl webtool snmp public_key mnesia eunit syntax_tools compiler
 COMBO_PLT = $(HOME)/.riak_combo_dialyzer_plt
