@@ -51,25 +51,26 @@ check() ->
 
     lists:append([
       [ {notice, {ring_size_unequal, RingSize, NumPartitions}} || RingSize /= NumPartitions ],
-      [ {critical, {ring_size_inappropriate, RingSize}} || (RingSize band -(bnot RingSize)) /= RingSize],
-      [ {notice, {ring_size_too_small, RingSize, NumRingMembers}} || VnodesPerNode =< MinAcceptableVnodesPerNode ],
-      [ {notice, {too_few_nodes_for_ring, RingSize, NumRingMembers}} || VnodesPerNode >= MaxRecommendedVnodesPerNode ] ]).
+      [ {critical, {ring_size_not_exp2, RingSize}} || (RingSize band -(bnot RingSize)) /= RingSize],
+%      [ {notice, {ring_size_too_small, RingSize, NumRingMembers}} || VnodesPerNode =< MinAcceptableVnodesPerNode ],
+%      [ {notice, {too_few_nodes_for_ring, RingSize, NumRingMembers}} || VnodesPerNode >= MaxRecommendedVnodesPerNode ]
+      ]).
 
 -spec format(term()) -> iodata() | {io:format(), [term()]}.
 format({ring_size_unequal, S, P}) ->
     {"The configured ring_creation_size (~B) is not equal to the number of partitions in the ring (~B). "
      "Please verify that the ring_creation_size in app.config is correct.", [S, P]};
 
-format({ring_size_inappropriate, S}) ->
+format({ring_size_not_exp2, S}) ->
     {"The configured ring_creation_size (~B) should always be a power of 2. "
      "Please reconfigure the ring_creation_size in app.config.", [S]};
 
-format({ring_size_too_small, S, N}) ->
-    {"With a ring_creation_size (~B) and ~B nodes participating in the cluster, each node is responsible for less than 3% of the data. "
-     " You have too many nodes for this size ring. "
-     "Please consider migrating data to a cluster with 2 or 4x your current ring size.", [S, N]};
+%format({ring_size_too_small, S, N}) ->
+%    {"With a ring_creation_size (~B) and ~B nodes participating in the cluster, each node is responsible for less than 3% of the data. "
+%     " You have too many nodes for this size ring. "
+%     "Please consider migrating data to a cluster with 2 or 4x your current ring size.", [S, N]};
 
-format({too_few_nodes_for_ring, S, N}) ->
-    {"With a ring_creation_size (~B) and ~B nodes participating in the cluster, each node is responsible for more than 70% of the data. "
-     " You have too few nodes for this size ring. "
-     "Please consider joining more nodes to your cluster.", [S, N]}.
+%format({too_few_nodes_for_ring, S, N}) ->
+%    {"With a ring_creation_size (~B) and ~B nodes participating in the cluster, each node is responsible for more than 70% of the data. "
+%     " You have too few nodes for this size ring. "
+%     "Please consider joining more nodes to your cluster.", [S, N]}.
