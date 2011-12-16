@@ -43,15 +43,15 @@ check() ->
     Stats = riaknostic_node:stats(),
     {ring_creation_size, RingSize} = lists:keyfind(ring_creation_size, 1, Stats),
     {ring_num_partitions, NumPartitions} = lists:keyfind(ring_num_partitions, 1, Stats),
-    {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
-    NumRingMembers = length(RingMembers),
-    VnodesPerNode = erlang:round(RingSize / NumRingMembers),
-    MinAcceptableVnodesPerNode = erlang:round(RingSize * 0.03),
-    MaxRecommendedVnodesPerNode = erlang:round(RingSize * 0.7),
+%    {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
+%    NumRingMembers = length(RingMembers),
+%    VnodesPerNode = erlang:round(RingSize / NumRingMembers),
+%    MinAcceptableVnodesPerNode = erlang:round(RingSize * 0.03),
+%    MaxRecommendedVnodesPerNode = erlang:round(RingSize * 0.7),
 
     lists:append([
       [ {notice, {ring_size_unequal, RingSize, NumPartitions}} || RingSize /= NumPartitions ],
-      [ {critical, {ring_size_not_exp2, RingSize}} || (RingSize band -(bnot RingSize)) /= RingSize],
+      [ {critical, {ring_size_not_exp2, RingSize}} || (RingSize band -(bnot RingSize)) /= RingSize]
 %      [ {notice, {ring_size_too_small, RingSize, NumRingMembers}} || VnodesPerNode =< MinAcceptableVnodesPerNode ],
 %      [ {notice, {too_few_nodes_for_ring, RingSize, NumRingMembers}} || VnodesPerNode >= MaxRecommendedVnodesPerNode ]
       ]).
@@ -63,7 +63,7 @@ format({ring_size_unequal, S, P}) ->
 
 format({ring_size_not_exp2, S}) ->
     {"The configured ring_creation_size (~B) should always be a power of 2. "
-     "Please reconfigure the ring_creation_size in app.config.", [S]};
+     "Please reconfigure the ring_creation_size in app.config.", [S]}.
 
 %format({ring_size_too_small, S, N}) ->
 %    {"With a ring_creation_size (~B) and ~B nodes participating in the cluster, each node is responsible for less than 3% of the data. "
