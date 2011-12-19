@@ -43,11 +43,11 @@
          check/0,
          format/1]).
 
--spec description() -> iodata().
+-spec description() -> string().
 description() ->
     "Data directory permissions and atime".
 
--spec valid() -> boolean().
+-spec valid() -> true.
 valid() ->
     true.
 
@@ -60,7 +60,7 @@ check() ->
                   end,
                   DataDirs).
 
--spec format(term()) -> iodata() | {io:format(), [term()]}.
+-spec format(term()) -> {io:format(), [term()]}.
 format({disk_full, DataDir}) ->
     {"Disk containing data directory ~s is full! "
      "Please check that it is set to the correct location and that there are not "
@@ -151,7 +151,7 @@ check_atime(Directory) ->
     File = filename:join([Directory, ?TEST_FILE]),
     {ok, FileInfo1} = file:read_file_info(File),
     timer:sleep(1001),
-    {ok, S} = file:open(File, read),
+    {ok, S} = file:open(File, [read]),
     io:get_line(S, ''),
     file:close(S),
     {ok, FileInfo2} = file:read_file_info(File),

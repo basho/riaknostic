@@ -31,7 +31,7 @@
          check/0,
          format/1]).
 
--spec description() -> iodata().
+-spec description() -> string().
 description() ->
     "Cluster membership validity".
 
@@ -51,6 +51,6 @@ check() ->
             [{warning, {not_ring_member, NodeName}}]
     end.
 
--spec format(term()) -> iodata() | {io:format(), [term()]}.
+-spec format(term()) -> {io:format(), [term()]}.
 format({not_ring_member, Nodename}) ->
     {"Local node ~w is not a member of the ring. Please check that the -name setting in vm.args is correct.", [Nodename]}.

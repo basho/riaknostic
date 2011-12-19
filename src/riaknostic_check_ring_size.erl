@@ -30,7 +30,7 @@
          check/0,
          format/1]).
 
--spec description() -> iodata().
+-spec description() -> string().
 description() ->
     "Ring size valid".
 
@@ -46,7 +46,7 @@ check() ->
 
     [ {notice, {ring_size_unequal, RingSize, NumPartitions}} || RingSize /= NumPartitions ].
 
--spec format(term()) -> iodata() | {io:format(), [term()]}.
+-spec format(term()) -> {io:format(), [term()]}.
 format({ring_size_unequal, S, P}) ->
     {"The configured ring_creation_size (~B) is not equal to the number of partitions in the ring (~B). "
      "Please verify that the ring_creation_size in app.config is correct.", [S, P]}.

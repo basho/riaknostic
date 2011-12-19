@@ -29,7 +29,7 @@
          check/0,
          format/1]).
 
--spec description() -> iodata().
+-spec description() -> string().
 description() ->
     "Cluster node liveness".
 
@@ -48,6 +48,6 @@ check() ->
                                            N =/= NodeName,
                                            lists:member(N, ConnectedNodes) == false].
 
--spec format(term()) -> iodata() | {io:format(), [term()]}.
+-spec format(term()) -> {io:format(), [term()]}.
 format({node_disconnected, Node}) ->
     {"Cluster member ~s is not connected to this node. Please check whether it is down.", [Node]}.

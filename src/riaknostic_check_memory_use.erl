@@ -31,7 +31,7 @@
          check/0,
          format/1]).
 
--spec description() -> iodata().
+-spec description() -> string().
 description() ->
     "Measure memory usage".
 
@@ -54,7 +54,7 @@ check() ->
             [{critical, {high_memory, Percent}} | Messages]
     end.
 
--spec format(term()) -> iodata() | {io:format(), [term()]}.
+-spec format(term()) -> {io:format(), [term()]}.
 format({high_memory, Percent}) ->
     {"Riak memory usage is HIGH: ~s% of available RAM", [Percent]};
 format({process_usage, Percent, Real}) ->

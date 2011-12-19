@@ -33,11 +33,11 @@
          check/0,
          format/1]).
 
--spec description() -> iodata().
+-spec description() -> string().
 description() ->
     "Find crash dumps".
 
--spec valid() -> true | false.
+-spec valid() -> true.
 valid() ->
     true.
 
@@ -57,7 +57,7 @@ check() ->
                        [{error, {enoent, DumpDir}}];
                    {error, _} ->
                        [{error, {eaccess, DumpDir}}];
-                   #file_info{access=Access} when Access =/= read_write ->
+                   {ok, #file_info{access=Access}} when Access =/= read_write ->
                        [{error, {eaccess, DumpDir}}];
                    _ ->
                        []
@@ -69,7 +69,7 @@ check() ->
             Messages
     end.
 
--spec format(term()) -> iolist() | {io:format(), [term()]}.
+-spec format(term()) -> {io:format(), [term()]}.
 format({eaccess, Dir}) ->
     {"Crash dump directory ~s is not writeable by Riak. Please set -env ERL_CRASH_DUMP <dir>/erl_crash.dump in vm.args to a writeable path.", [Dir]};
 format({enoent, Dir}) ->
