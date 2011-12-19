@@ -7,3 +7,4 @@ index.html
 riaknostic
 *.png
 pkg/
+erl_crash.dump
