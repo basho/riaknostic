@@ -76,7 +76,7 @@ cluster_command(Module, Function) ->
 %% @see can_connect/0
 -spec cluster_command(Module::atom(), Function::atom(), Args::[term()]) -> term().
 cluster_command(Module, Function, Args) ->
-    local_command(Module, Function, Args, 5000).
+    cluster_command(Module, Function, Args, 5000).
 
 %% @doc Calls the given module and function with the given arguments
 %% on all members for the Riak cluster, returning an error if the call
