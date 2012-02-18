@@ -2,21 +2,21 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>Module riaknostic_check_memory_use</title>
+<title>Module riaknostic_check_ring_preflists</title>
 <link rel="stylesheet" type="text/css" href="stylesheet.css" title="EDoc">
 </head>
 <body bgcolor="white">
 <div class="navbar"><a name="#navbar_top"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
 <hr>
 
-<h1>Module riaknostic_check_memory_use</h1>
-<ul class="index"><li><a href="#description">Description</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>Diagnostic that checks Riak's current memory usage.
+<h1>Module riaknostic_check_ring_preflists</h1>
+<ul class="index"><li><a href="#description">Description</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>Diagnostic that checks the local ring for any preflists that do
+  not satisfy n_val.
 
 <p><b>Behaviours:</b> <a href="riaknostic_check.html"><tt>riaknostic_check</tt></a>.</p>
 
-<h2><a name="description">Description</a></h2>Diagnostic that checks Riak's current memory usage. If memory
-  usage is high, a warning message will be sent, otherwise only
-  informational messages.
+<h2><a name="description">Description</a></h2>Diagnostic that checks the local ring for any preflists that do
+  not satisfy n_val
 <h2><a name="index">Function Index</a></h2>
 <table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#check-0">check/0</a></td><td></td></tr>
 <tr><td valign="top"><a href="#description-0">description/0</a></td><td></td></tr>
