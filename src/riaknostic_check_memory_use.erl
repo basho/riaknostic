@@ -43,11 +43,11 @@ valid() ->
 check() ->
     Pid = riaknostic_node:pid(),
     Output = riaknostic_util:run_command("ps -o pmem,rss -p " ++ Pid),
-    [_,_,Percent, RealSize| _] = re:split(Output, "\s+|\$"),
+    [_,_,Percent, RealSize| _] = string:tokens(Output, "/n \n"),
     Messages = [
                 {info, {process_usage, Percent, RealSize}}
                ],
-    case riaknostic_util:binary_to_float(Percent) >= 90 of
+    case riaknostic_util:binary_to_float(list_to_binary(Percent)) >= 90 of
         false ->
             Messages;
         true ->
