@@ -25,6 +25,7 @@
 -module(riaknostic_node).
 
 -export([can_connect/0,
+         can_connect_all/0,
          stats/0,
          pid/0,
          local_command/2,
@@ -107,6 +108,17 @@ can_connect() ->
         false ->
             lager:debug("Not connected to the local Riak node, trying to connect. alive:~p connect_failed:~p", [is_alive(), connect_failed()]),
             maybe_connect()
+    end.
+
+-spec can_connect_all() -> true | false.
+can_connect_all() ->
+    case is_connected() of
+        true ->
+            case riaknostic_check_nodes_connected:check() of
+                [] -> true;
+                _ -> false
+            end;
+        false -> false
     end.
 
 %% @doc Fetches or returns previously fetched Riak statistics.
