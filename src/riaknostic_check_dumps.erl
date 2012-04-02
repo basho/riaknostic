@@ -56,9 +56,9 @@ check() ->
                    {error, enoent} ->
                        [{error, {enoent, DumpDir}}];
                    {error, _} ->
-                       [{error, {eaccess, DumpDir}}];
+                       [{error, {eacces, DumpDir}}];
                    {ok, #file_info{access=Access}} when Access =/= read_write ->
-                       [{error, {eaccess, DumpDir}}];
+                       [{error, {eacces, DumpDir}}];
                    _ ->
                        []
                end,
@@ -70,7 +70,7 @@ check() ->
     end.
 
 -spec format(term()) -> {io:format(), [term()]}.
-format({eaccess, Dir}) ->
+format({eacces, Dir}) ->
     {"Crash dump directory ~s is not writeable by Riak. Please set -env ERL_CRASH_DUMP <dir>/erl_crash.dump in vm.args to a writeable path.", [Dir]};
 format({enoent, Dir}) ->
     {"Crash dump directory ~s does not exist. Please set -env ERL_CRASH_DUMP <dir>/erl_crash.dump in vm.args to a writeable path.", [Dir]};

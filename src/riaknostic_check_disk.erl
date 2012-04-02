@@ -111,7 +111,7 @@ check_is_writeable(Directory) ->
     case file:write_file(File, <<"ok">>) of
         ok ->
             ok;
-        {error, Error} when Error == enoent orelse Error == eaccess ->
+        {error, Error} when Error == enoent orelse Error == eacces ->
             {error, {no_write, Directory}};
         {error, enospc} ->
             {critical, {disk_full, Directory}};
@@ -125,7 +125,7 @@ check_is_readable(Directory) ->
         {ok, #file_info{access=Access}} when Access == read orelse
                                              Access == read_write ->
             ok;
-        {error, eaccess} ->
+        {error, eacces} ->
             {error, {no_read, Directory}};
         {error, Error} when Error == enoent orelse
                             Error == enotdir ->
@@ -138,7 +138,7 @@ check_is_readable(Directory) ->
 check_is_file_readable(Directory) ->
     File = filename:join([Directory, ?TEST_FILE]),
     case file:read_file(File) of
-        {error, Error} when Error == eaccess orelse
+        {error, Error} when Error == eacces orelse
                             Error == enotdir ->
             {error, {no_read, Directory}};
         {error, enoent} ->
