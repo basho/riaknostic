@@ -112,9 +112,13 @@ can_connect() ->
 
 -spec can_connect_all() -> true | false.
 can_connect_all() ->
-    case riaknostic_check_nodes_connected:check() of
-        [] -> true;
-        _ -> false
+    case is_connected() of
+        true ->
+            case riaknostic_check_nodes_connected:check() of
+                [] -> true;
+                _ -> false
+            end;
+        false -> false
     end.
 
 %% @doc Fetches or returns previously fetched Riak statistics.
