@@ -36,7 +36,7 @@ description() ->
 
 -spec valid() -> boolean().
 valid() ->
-    riaknostic_node:can_connect().
+    riaknostic_node:can_connect_all().
 
 -spec check() -> [{lager:log_level(), term()}].
 check() ->
