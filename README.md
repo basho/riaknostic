@@ -1,4 +1,4 @@
-# Riaknostic
+# Riaknostic [![Build Status](https://secure.travis-ci.org/basho/riaknostic.png?branch=master)](http://travis-ci.org/basho/riaknostic)
 
 Riaknostic performs basic diagnostics on Riak nodes. See the
 [Riaknostic homepage](http://riaknostic.basho.com) for user-oriented
