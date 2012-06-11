@@ -62,11 +62,15 @@
                {list,  $l,        "list",  undefined,      "Describe available diagnostic tasks"             },
                {usage, $h,        "help",  undefined,      "Display help/usage"                              },
                % should we calc and interpolate the actual cwd for the below?
-               {export,undefined, "export",undefined,      "Package system info in '$CWD/export.zip'"        }
+               {export,undefined, "export",undefined,      "Package system info in '$CWD/export.zip'"        },
+               {terms, $m,        undefined, undefined,      "Emit machine readable output"                  },
+               {terms, undefined, "mr_out",  {string, stdin},"Emit machine readable output to file <mr_out>" }
               ]).
 
 -define(USAGE_OPTS, [ O || O <- ?OPTS,
                            element(5,O) =/= undefined]).
+
+-define(MR_OUTPUT_VSN, 1).
 
 %% @doc The main entry point for the riaknostic escript.
 -spec main(CommandLineArguments::[string()]) -> any().
@@ -133,11 +137,24 @@ run(InputChecks) ->
                     io:format("No diagnostic messages to report.~n"),
                     halt(0);
                 _ ->
-                    lists:foreach(fun riaknostic_check:print/1, SortedMessages),
+		    case application:get_env(riaknostic, terms) of
+			{ok, true} ->
+			    write_list(SortedMessages);
+			undefined ->		    
+			    lists:foreach(fun riaknostic_check:print/1, SortedMessages)
+		    end,
                     halt(1)
             end
     end.
 
+write_list(MessageList) ->
+    case application:get_env(riaknostic, term_target) of
+	{ok, stdin} -> io:format("~w", [{riaknostic_report, ?MR_OUTPUT_VSN, MessageList}]);
+	{ok, Path}  -> {ok, Fh} = file:open(filename:absname(Path), [write]), 
+		       io:format(Fh, "~w", [{riaknostic_report, ?MR_OUTPUT_VSN, MessageList}]),
+		       file:close(Fh)
+    end.
+		
 validate_checks(Check, {Mods, SNames}) ->
     case lists:keyfind(Check, 1, SNames) of
         {Check, Mod} ->
@@ -174,4 +191,10 @@ process_option(list, _) ->
 process_option(usage, _) ->
     usage;
 process_option(export, _) ->
-    export.
+    export;
+process_option(terms, Result) ->
+    process_option({terms, stdin}, Result);
+process_option({terms, Path}, Result) ->
+    application:set_env(riaknostic, terms, true),
+    application:set_env(riaknostic, term_target, Path),
+    Result.
