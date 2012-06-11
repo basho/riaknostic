@@ -55,16 +55,20 @@
 -export([main/1]).
 
 -define(OPTS, [
-               {etc,   undefined, "etc",   string,         undefined                                         },
-               {base,  undefined, "base",  string,         undefined                                         },
-               {user,  undefined, "user",  string,         undefined                                         },
-               {level, $d,        "level", {atom, notice}, "Minimum message severity level (default: notice)"},
-               {list,  $l,        "list",  undefined,      "Describe available diagnostic tasks"             },
-               {usage, $h,        "help",  undefined,      "Display help/usage"                              }
+               {etc,   undefined, "etc",     string,         undefined                                         },
+               {base,  undefined, "base",    string,         undefined                                         },
+               {user,  undefined, "user",    string,         undefined                                         },
+               {level, $d,        "level",   {atom, notice}, "Minimum message severity level (default: notice)"},
+               {list,  $l,        "list",    undefined,      "Describe available diagnostic tasks"             },
+               {usage, $h,        "help",    undefined,      "Display help/usage"                              },
+               {terms, $m,        undefined, undefined,      "Emit machine readable output"                    },
+               {terms, undefined, "mr_out",  {string, stdin},"Emit machine readable output to file <mr_out>"   }
               ]).
 
 -define(USAGE_OPTS, [ O || O <- ?OPTS,
                            element(5,O) =/= undefined]).
+
+-define(MR_OUTPUT_VSN, 1).
 
 %% @doc The main entry point for the riaknostic escript.
 -spec main(CommandLineArguments::[string()]) -> any().
@@ -128,11 +132,24 @@ run(InputChecks) ->
                 [] ->
                     halt(0);
                 _ ->
-                    lists:foreach(fun riaknostic_check:print/1, SortedMessages),
+		    case application:get_env(riaknostic, terms) of
+			{ok, true} ->
+			    write_list(SortedMessages);
+			undefined ->		    
+			    lists:foreach(fun riaknostic_check:print/1, SortedMessages)
+		    end,
                     halt(1)
             end
     end.
 
+write_list(MessageList) ->
+    case application:get_env(riaknostic, term_target) of
+	{ok, stdin} -> io:format("~w", [{riaknostic_report, ?MR_OUTPUT_VSN, MessageList}]);
+	{ok, Path}  -> {ok, Fh} = file:open(filename:absname(Path), [write]), 
+		       io:format(Fh, "~w", [{riaknostic_report, ?MR_OUTPUT_VSN, MessageList}]),
+		       file:close(Fh)
+    end.
+		
 validate_checks(Check, {Mods, SNames}) ->
     case lists:keyfind(Check, 1, SNames) of
         {Check, Mod} ->
@@ -167,4 +184,10 @@ process_option(list, usage) -> %% Help should have precedence over listing check
 process_option(list, _) ->
     list;
 process_option(usage, _) ->
-    usage.
+    usage;
+process_option(terms, Result) ->
+    process_option({terms, stdin}, Result);
+process_option({terms, Path}, Result) ->
+    application:set_env(riaknostic, terms, true),
+    application:set_env(riaknostic, term_target, Path),
+    Result.
