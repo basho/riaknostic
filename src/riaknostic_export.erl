@@ -35,16 +35,25 @@ export() ->
     TmpDir = prep_tmp_dir(),
     CmdList = get_cmd_list(),
     Outputs = run_commands(CmdList),
-    ok = write_to_file(Outputs, TmpDir),
+    write_to_file(Outputs, TmpDir),
     cleanup_tmp_dir(TmpDir).
 
 get_cmd_list() ->
-    [
-     % the pattern here should be:
-     % {"desired_filename", "command_to_run"},
-     {"iostat", "iostat 1 5"}
-     % {"fstab", "cat /etc/fstab"}
-    ].
+    case os:type() of 
+        {unix, darwin} ->
+            [
+             %% the pattern here should be:
+             %% {"desired_filename", "command_to_run"},
+             {"iostat", "iostat 1 5"}
+             %% {"fstab", "cat /etc/fstab"}
+            ];
+        {unix, linux}  -> 
+            [
+             {"iostat", "iostat 1 5"},
+             {"fstab", "cat /etc/fstab"}
+            ];
+        _ -> [] % maybe throw an error here?
+    end.
 
 run_commands(CmdList) ->
     [{Name, riaknostic_util:run_command(Cmd)} ||
@@ -52,7 +61,12 @@ run_commands(CmdList) ->
 
 write_to_file([], Dir) -> 
     % gathered everything, now package it;
-    os:cmd("tar czf export.tgz " ++ Dir);
+    {ok, NameList} = file:list_dir(Dir),
+    FileList = ["export/" ++ File || File <- NameList],
+    PrefLen = string:len(Dir) - string:len("export/"),
+    Prefix = string:sub_string(Dir, 1, PrefLen),
+    io:format("~s~n", [[FileList, Prefix, Dir]]),
+    zip:zip("export.zip", FileList, [{cwd, Prefix}, verbose]);
 
 write_to_file(Outputs, Dir) ->
     [H|T] = Outputs,
@@ -63,7 +77,9 @@ write_to_file(Outputs, Dir) ->
 prep_tmp_dir() ->
     % this may not be a good idea
     {A, B, C} = now(),
-    DirName = "/tmp/" ++ integer_to_list(A+B+C),
+    DirPrefix = "/tmp/" ++ integer_to_list(A+B+C),
+    file:make_dir(DirPrefix),
+    DirName = DirPrefix ++ "/export/",
     file:make_dir(DirName),
     DirName.
 
