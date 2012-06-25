@@ -34,6 +34,8 @@
 export() ->
     TmpDir = prep_tmp_dir(),
     CmdList = get_cmd_list(),
+    FileList = get_file_list(),
+    copy_to_dir(FileList, TmpDir),
     Outputs = run_commands(CmdList),
     write_to_file(Outputs, TmpDir),
     cleanup_tmp_dir(TmpDir).
