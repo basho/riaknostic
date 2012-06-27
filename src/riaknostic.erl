@@ -114,9 +114,10 @@ run(InputChecks) ->
                            end, [], Checks),
     case Messages of
         [] ->
+            io:format("No diagnostic messages to report.~n"),
             halt(0);
         _ ->
-%% Print the most critical messages first
+            %% Print the most critical messages first
             LogLevelNum = lager:minimum_loglevel(lager:get_loglevels()),
             FilteredMessages = lists:filter(fun({Level,_,_}) ->
                                                     lager_util:level_to_num(Level) =< LogLevelNum
@@ -126,6 +127,7 @@ run(InputChecks) ->
                                         end, FilteredMessages),
             case SortedMessages of
                 [] ->
+                    io:format("No diagnostic messages to report.~n"),
                     halt(0);
                 _ ->
                     lists:foreach(fun riaknostic_check:print/1, SortedMessages),
