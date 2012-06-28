@@ -38,48 +38,69 @@ export() ->
     copy_to_dir(FileList, TmpDir),
     Outputs = run_commands(CmdList),
     write_to_file(Outputs, TmpDir),
+    package_files(TmpDir),
     cleanup_tmp_dir(TmpDir).
 
 get_cmd_list() ->
     case os:type() of 
-        {unix, darwin} ->
-            [
-             %% the pattern here should be:
-             %% {"desired_filename", "command_to_run"},
-             {"iostat", "iostat 1 5"}
-             %% {"fstab", "cat /etc/fstab"}
-            ];
         {unix, linux}  -> 
             [
-             {"iostat", "iostat 1 5"},
-             {"fstab", "cat /etc/fstab"}
+             {"iostat", "iostat 1 5"}
             ];
-        _ -> [] % maybe throw an error here?
+        {unix, darwin} ->
+            [
+             {"iostat", "iostat 1 5"}
+            ];
+        _ -> [] 
+    end.
+
+get_file_list() ->
+    case os:type() of 
+        {unix, linux} ->
+            [ 
+              "/etc/hostname",
+              "/etc/fstab"
+            ];
+        {unix, darwin} ->
+            [
+             "/etc/hosts"
+            ];
+        _ -> []
     end.
 
 run_commands(CmdList) ->
     [{Name, riaknostic_util:run_command(Cmd)} ||
         {Name, Cmd} <- CmdList].
 
-write_to_file([], Dir) -> 
-    % gathered everything, now package it;
-    {ok, NameList} = file:list_dir(Dir),
-    FileList = ["export/" ++ File || File <- NameList],
-    PrefLen = string:len(Dir) - string:len("export/"),
-    Prefix = string:sub_string(Dir, 1, PrefLen),
-    io:format("~s~n", [[FileList, Prefix, Dir]]),
-    zip:zip("export.zip", FileList, [{cwd, Prefix}, verbose]);
+copy_to_dir([], _Dir) ->
+    ok;
+copy_to_dir(FileList, Dir) ->
+    [FileName|Tail] = FileList,
+    {ok, _} = file:copy(FileName, 
+                        Dir ++ filename:basename(FileName)),
+    copy_to_dir(Tail, Dir).
 
+write_to_file([], _Dir) -> 
+    ok;
 write_to_file(Outputs, Dir) ->
     [H|T] = Outputs,
     {Filename, Output} = H,
     file:write_file(Dir ++ "/" ++ Filename, Output),
     write_to_file(T, Dir).
 
+package_files(Dir) -> 
+    % gathered everything, now package it;
+    {ok, NameList} = file:list_dir(Dir),
+    FileList = ["export/" ++ File || File <- NameList],
+    PrefLen = string:len(Dir) - string:len("export/"),
+    Prefix = string:sub_string(Dir, 1, PrefLen),
+    zip:zip("export.zip", FileList, [{cwd, Prefix}]).
+
 prep_tmp_dir() ->
     % this may not be a good idea
     {A, B, C} = now(),
-    DirPrefix = "/tmp/" ++ integer_to_list(A+B+C),
+    {ok, Cwd} = file:get_cwd(),
+    DirPrefix = Cwd ++ "/export" ++ integer_to_list(A+B+C),
     file:make_dir(DirPrefix),
     DirName = DirPrefix ++ "/export/",
     file:make_dir(DirName),
@@ -87,7 +108,11 @@ prep_tmp_dir() ->
 
 cleanup_tmp_dir(DirName) ->
     {ok, FileNames} = file:list_dir(DirName),
-    lists:map(fun file:delete/1, FileNames),
-    file:del_dir(DirName).
+    lists:map(fun(File) -> file:delete(DirName ++ File) end, 
+              FileNames),
+    ok = file:del_dir(DirName),
+    PrefLen = string:len(DirName) - string:len("export/"),
+    Prefix = string:sub_string(DirName, 1, PrefLen),
+    ok = file:del_dir(Prefix).
 
 
