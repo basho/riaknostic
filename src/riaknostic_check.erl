@@ -53,7 +53,10 @@
 -export([behaviour_info/1]).
 -export([check/1,
          modules/0,
-         print/1]).
+         print/1, 
+         write_mr_list/2]).
+
+-define(MR_OUTPUT_VSN, 1).
 
 %% @doc The behaviour definition for diagnostic modules.
 -spec behaviour_info(atom()) -> 'undefined' | [{atom(), arity()}].
@@ -98,3 +101,11 @@ print({Level, Mod, Data}) ->
         String ->
             lager:log(Level, self(), String)
     end.
+
+%% @doc Writes a consult/1 consumable file containing the output, instead
+%% of the human-readable version printed to stdout.
+-spec write_mr_list(list(), string()) -> ok.
+write_mr_list(MessageList, FileName) ->
+    {ok, Fh} = file:open(os:getenv("CALLING_DIR") ++ FileName, [write]), 
+    io:format(Fh, "~p", [{riaknostic_report, ?MR_OUTPUT_VSN, MessageList}]),
+    file:close(Fh).
