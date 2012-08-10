@@ -62,13 +62,11 @@
                {list,  $l,        "list",    undefined,      "Describe available diagnostic tasks"             },
                {usage, $h,        "help",    undefined,      "Display help/usage"                              },
                {terms, $m,        undefined, undefined,      "Emit machine readable output"                    },
-               {terms, undefined, "mr_out",  {string, stdin},"Emit machine readable output to file <mr_out>"   }
+               {terms, undefined, "mr_out",  string,         "Emit machine readable output to file <mr_out>"   }
               ]).
 
 -define(USAGE_OPTS, [ O || O <- ?OPTS,
                            element(5,O) =/= undefined]).
-
--define(MR_OUTPUT_VSN, 1).
 
 %% @doc The main entry point for the riaknostic escript.
 -spec main(CommandLineArguments::[string()]) -> any().
@@ -120,7 +118,7 @@ run(InputChecks) ->
         [] ->
             halt(0);
         _ ->
-%% Print the most critical messages first
+            %% Print the most critical messages first
             LogLevelNum = lager:minimum_loglevel(lager:get_loglevels()),
             FilteredMessages = lists:filter(fun({Level,_,_}) ->
                                                     lager_util:level_to_num(Level) =< LogLevelNum
@@ -132,24 +130,17 @@ run(InputChecks) ->
                 [] ->
                     halt(0);
                 _ ->
-		    case application:get_env(riaknostic, terms) of
-			{ok, true} ->
-			    write_list(SortedMessages);
-			undefined ->		    
-			    lists:foreach(fun riaknostic_check:print/1, SortedMessages)
-		    end,
+                    case application:get_env(riaknostic, terms) of
+                        {ok, true} ->
+                            {ok, Path} = application:get_env(riaknostic, term_target),
+                            riaknostic_check:write_mr_list(SortedMessages, Path);
+                        undefined ->		    
+                            lists:foreach(fun riaknostic_check:print/1, SortedMessages)
+                    end,
                     halt(1)
             end
     end.
 
-write_list(MessageList) ->
-    case application:get_env(riaknostic, term_target) of
-	{ok, stdin} -> io:format("~w", [{riaknostic_report, ?MR_OUTPUT_VSN, MessageList}]);
-	{ok, Path}  -> {ok, Fh} = file:open(filename:absname(Path), [write]), 
-		       io:format(Fh, "~w", [{riaknostic_report, ?MR_OUTPUT_VSN, MessageList}]),
-		       file:close(Fh)
-    end.
-		
 validate_checks(Check, {Mods, SNames}) ->
     case lists:keyfind(Check, 1, SNames) of
         {Check, Mod} ->
