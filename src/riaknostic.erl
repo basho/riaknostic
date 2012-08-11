@@ -62,7 +62,7 @@
                {list,  $l,        "list",  undefined,      "Describe available diagnostic tasks"             },
                {usage, $h,        "help",  undefined,      "Display help/usage"                              },
                % should we calc and interpolate the actual cwd for the below?
-               {export,undefined, "export",undefined,      "Package system info in '$CWD/export.tgz'"        }
+               {export,undefined, "export",undefined,      "Package system info in '$CWD/export.zip'"        }
               ]).
 
 -define(USAGE_OPTS, [ O || O <- ?OPTS,

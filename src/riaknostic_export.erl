@@ -27,7 +27,6 @@
 -module(riaknostic_export).
 -export([export/0]).
 
-
 %% @doc wrapper for all the moving parts of the export function
 %% XXX/evan terrible first draft error-handling
 -spec export() -> ok | {error, string()}.
@@ -42,31 +41,63 @@ export() ->
     cleanup_tmp_dir(TmpDir).
 
 get_cmd_list() ->
-    case os:type() of 
-        {unix, linux}  -> 
-            [
-             {"iostat", "iostat 1 5"}
-            ];
-        {unix, darwin} ->
-            [
-             {"iostat", "iostat 1 5"}
-            ];
-        _ -> [] 
-    end.
+    List = [ 
+             {"df", "df"}
+           ], 
+    Stats = [
+             {"iostat", "iostat 1 4"},
+             {"vmstat", "vmstat 1 4"},
+             {"sysctl-net", "sysctl net"}
+            ],             
+    PerOS = case os:type() of 
+                {unix, linux}  -> 
+                    [
+                     {"swappiness", "sysctl vm.swappiness"}
+                    ] ++ Stats;
+                {unix, darwin} -> [];  % unsupported for production
+                {unix, freebsd} ->
+                    [
+                     {"iostat", "iostat 1 5"}
+                    ] ++ Stats;
+                {unix, sunos} ->
+                    [
+                     {"iostat", "iostat 1 5"}
+                    ];
+                _ -> [] %maybe explicitly error here?
+            end,
+    List ++ PerOS.
 
 get_file_list() ->
-    case os:type() of 
-        {unix, linux} ->
-            [ 
-              "/etc/hostname",
-              "/etc/fstab"
-            ];
-        {unix, darwin} ->
-            [
-             "/etc/hosts"
-            ];
-        _ -> []
-    end.
+    List = [
+            "/etc/hosts", % might want to omit
+            "/etc/hostname",
+            "/etc/riak/app.config",
+            "/etc/riak/vm.args",
+            "/etc/fstab",
+            "/var/log/riak/console.log", 
+            "/var/log/riak/error.log", 
+            "/var/log/riak/erlang.log", 
+            "/var/log/riak/run_erl.log", 
+            "/var/log/riak/erl_crash.dump", 
+            "/var/log/riak/crash.log"
+           ],
+    PerOS = case os:type() of 
+                {unix, linux} ->
+                    [ 
+                      "/etc/fstab"
+                    ];
+                {unix, darwin} -> []; % unsupported for production
+                {unix, freebsd} ->
+                    [
+                     "/etc/fstab"
+                    ];
+                {unix, sunos} ->
+                    [
+                     "/etc/fstab"
+                    ]; 
+                _ -> [] %maybe explicitly error here?
+            end,
+    List ++ PerOS.
 
 run_commands(CmdList) ->
     [{Name, riaknostic_util:run_command(Cmd)} ||
