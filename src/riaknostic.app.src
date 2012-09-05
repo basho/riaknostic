@@ -28,7 +28,8 @@
                   kernel,
                   stdlib,
                   inets,
-                  lager
+                  lager,
+                  cluster_info                
                  ]},
   {mod, { riaknostic_app, []}}
  ]}.

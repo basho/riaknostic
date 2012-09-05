@@ -60,9 +60,10 @@
                {user,  undefined, "user",  string,         undefined                                         },
                {level, $d,        "level", {atom, notice}, "Minimum message severity level (default: notice)"},
                {list,  $l,        "list",  undefined,      "Describe available diagnostic tasks"             },
-               {usage, $h,        "help",  undefined,      "Display help/usage"                              },
                % should we calc and interpolate the actual cwd for the below?
-               {export,undefined, "export",undefined,      "Package system info in '$CWD/export.zip'"        }
+               {export,undefined, "export",undefined,      "Package system info in '$CWD/export.zip'"        },
+               {clust, $c,"cluster_info",  undefined,      "Gather cluster info: <outfile> [node-list]"      },
+               {usage, $h,        "help",  undefined,      "Display help/usage"                              }
               ]).
 
 -define(USAGE_OPTS, [ O || O <- ?OPTS,
@@ -79,7 +80,8 @@ main(Args) ->
                 list -> list_checks();
                 usage -> usage();
                 run -> run(NonOptArgs);
-                export -> riaknostic_export:export()
+                export -> riaknostic_export:export();
+                clust -> cluster_info(NonOptArgs)
             end;
         {error, Error} ->
             io:format("Invalid option sequence given: ~w~n", [Error]),
@@ -96,6 +98,45 @@ list_checks() ->
 
 usage() ->
     getopt:usage(?USAGE_OPTS, "riak-admin diag", "[check_name ...]", [{"check_name", "A specific check to run"}]).
+
+cluster_info([]) ->
+    usage();
+cluster_info([OutFile|Rest]) ->
+    riaknostic_config:prepare(),
+    true = riaknostic_node:can_connect(),
+    LN = riaknostic_node:local_command(erlang, node),
+    RN = riaknostic_node:local_command(erlang, nodes),
+    Cluster = [LN|RN], 
+    cluster_info:start(),
+    try
+        case lists:reverse(atomify_nodestrs(Rest)) of
+            [] ->
+                cluster_info:dump_nodes(Cluster, OutFile);
+            Nodes ->
+                cluster_info:dump_nodes(Nodes, OutFile)
+        end
+    catch
+        error:{badmatch, {error, eacces}} ->
+            io:format("Cluster_info failed, permission denied writing to ~p~n", [OutFile]);
+        error:{badmatch, {error, enoent}} ->
+            io:format("Cluster_info failed, no such directory ~p~n", [filename:dirname(OutFile)]);
+        error:{badmatch, {error, enotdir}} ->
+            io:format("Cluster_info failed, not a directory ~p~n", [filename:dirname(OutFile)]);
+        Exception:Reason -> lager:error("Cluster_info failed ~p:~p",
+                                        [Exception, Reason]),
+                            io:format("Cluster_info failed, see log for details~n"),
+                            error
+    end.
+
+atomify_nodestrs(Strs) ->
+    lists:foldl(fun("local", Acc) -> [node()|Acc];
+                   (NodeStr, Acc) -> try
+                                         [list_to_existing_atom(NodeStr)|Acc]
+                                     catch error:badarg ->
+                                             io:format("Bad node: ~s\n", [NodeStr]),
+                                             Acc
+                                     end
+                end, [], Strs).
 
 run(InputChecks) ->
     case riaknostic_config:prepare() of
@@ -171,6 +212,8 @@ process_option(list, usage) -> %% Help should have precedence over listing check
     usage;
 process_option(list, _) ->
     list;
+process_option(clust, _) ->
+    clust;    
 process_option(usage, _) ->
     usage;
 process_option(export, _) ->
