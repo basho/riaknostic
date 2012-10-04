@@ -54,14 +54,14 @@ get_cmd_list() ->
                     [
                      {"swappiness", "sysctl vm.swappiness"}
                     ] ++ Stats;
-                {unix, darwin} -> [];  % unsupported for production
+                {unix, darwin} -> 
+                    [
+                    ];  % unsupported for production
                 {unix, freebsd} ->
                     [
-                     {"iostat", "iostat 1 5"}
                     ] ++ Stats;
                 {unix, sunos} ->
                     [
-                     {"iostat", "iostat 1 5"}
                     ];
                 _ -> [] %maybe explicitly error here?
             end,
@@ -71,15 +71,9 @@ get_file_list() ->
     List = [
             "/etc/hosts", % might want to omit
             "/etc/hostname",
-            "/etc/riak/app.config",
-            "/etc/riak/vm.args",
+            "/etc/riak/",
             "/etc/fstab",
-            "/var/log/riak/console.log", 
-            "/var/log/riak/error.log", 
-            "/var/log/riak/erlang.log", 
-            "/var/log/riak/run_erl.log", 
-            "/var/log/riak/erl_crash.dump", 
-            "/var/log/riak/crash.log"
+            "/var/log/riak/"
            ],
     PerOS = case os:type() of 
                 {unix, linux} ->
@@ -89,27 +83,50 @@ get_file_list() ->
                 {unix, darwin} -> []; % unsupported for production
                 {unix, freebsd} ->
                     [
-                     "/etc/fstab"
                     ];
                 {unix, sunos} ->
                     [
-                     "/etc/fstab"
                     ]; 
                 _ -> [] %maybe explicitly error here?
             end,
     List ++ PerOS.
 
 run_commands(CmdList) ->
-    [{Name, riaknostic_util:run_command(Cmd)} ||
+    [{Name, run_command(Cmd)} || 
         {Name, Cmd} <- CmdList].
+
+run_command(Cmd) ->
+    try
+        riaknostic_util:run_command(Cmd)
+    catch 
+        Error:Reason ->
+            io:format("when running ~s got ~s:~s~n ~w~n", 
+                      [Cmd, Error, Reason, erlang:get_stacktrace()]),
+            "got error\n"
+    end.
+            
 
 copy_to_dir([], _Dir) ->
     ok;
 copy_to_dir(FileList, Dir) ->
     [FileName|Tail] = FileList,
-    {ok, _} = file:copy(FileName, 
-                        Dir ++ filename:basename(FileName)),
-    copy_to_dir(Tail, Dir).
+    case lists:last(FileName) of 
+        $/ -> 
+            %%add files in this dir to tail
+            {ok, Files} = file:list_dir(FileName),
+            copy_to_dir([FileName ++ File || File <- Files] ++ Tail, 
+                        Dir);
+        _ -> 
+            Res = file:copy(FileName, 
+                            Dir ++ filename:basename(FileName)),
+            case Res of
+                {ok, _} -> ok;
+                {error, Reason} ->
+                    io:format("Couldn't copy ~s. Error: ~s", 
+                              [FileName, Reason])
+            end,
+            copy_to_dir(Tail, Dir)
+    end.
 
 write_to_file([], _Dir) -> 
     ok;
@@ -125,6 +142,9 @@ package_files(Dir) ->
     FileList = ["export/" ++ File || File <- NameList],
     PrefLen = string:len(Dir) - string:len("export/"),
     Prefix = string:sub_string(Dir, 1, PrefLen),
+    {ok, Cwd} = file:get_cwd(),
+    io:format("Writing export file: ~s~n", 
+              [Cwd ++ "/export.zip"]),
     zip:zip("export.zip", FileList, [{cwd, Prefix}]).
 
 prep_tmp_dir() ->

@@ -40,13 +40,21 @@ short_name(Mod) when is_atom(Mod) ->
 run_command(Command) ->
     lager:debug("Running shell command: ~s", [Command]),
     Port = erlang:open_port({spawn,Command},[exit_status, stderr_to_stdout]),
+    do_read(Port, []).
+
+do_read(Port, Acc) ->
     receive
         {Port, {data, StdOut}} ->
             lager:debug("Shell command output: ~n~s~n",[StdOut]),
-            port_close(Port),
-            StdOut
+            do_read(Port, Acc ++ StdOut);
+        {Port, {exit_status, _}} -> 
+            %%port_close(Port),
+            Acc;
+        Other -> 
+            io:format("~w", [Other]),
+            do_read(Port, Acc)
     end.
-
+ 
 %% @doc Converts a binary containing a text representation of a float
 %% into a float type.
 -spec binary_to_float(binary()) -> float().
