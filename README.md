@@ -42,6 +42,10 @@ To install `riaknostic`, download the latest package version, and extract it wit
             <td><code>/opt/riak/lib</code></td>
         </tr>
         <tr>
+            <td>SmartOS (Joyent)</td>
+            <td><code>/opt/local/lib/riak/lib</code></td>
+        </tr>
+        <tr>
             <td>Mac OS/X or Self-built</td>
             <td><code>$RIAK/lib</code>
                 (where <code>$RIAK=rel/riak</code> for source installs,
