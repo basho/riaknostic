@@ -60,7 +60,9 @@
                {user,  undefined, "user",  string,         undefined                                         },
                {level, $d,        "level", {atom, notice}, "Minimum message severity level (default: notice)"},
                {list,  $l,        "list",  undefined,      "Describe available diagnostic tasks"             },
-               {usage, $h,        "help",  undefined,      "Display help/usage"                              }
+               {usage, $h,        "help",  undefined,      "Display help/usage"                              },
+               % should we calc and interpolate the actual cwd for the below?
+               {export,undefined, "export",undefined,      "Package system info in '$CWD/export.zip'"        }
               ]).
 
 -define(USAGE_OPTS, [ O || O <- ?OPTS,
@@ -76,7 +78,8 @@ main(Args) ->
             case process_opts(Opts) of
                 list -> list_checks();
                 usage -> usage();
-                run -> run(NonOptArgs)
+                run -> run(NonOptArgs);
+                export -> riaknostic_export:export()
             end;
         {error, Error} ->
             io:format("Invalid option sequence given: ~w~n", [Error]),
@@ -169,4 +172,6 @@ process_option(list, usage) -> %% Help should have precedence over listing check
 process_option(list, _) ->
     list;
 process_option(usage, _) ->
-    usage.
+    usage;
+process_option(export, _) ->
+    export.
