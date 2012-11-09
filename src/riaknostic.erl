@@ -62,7 +62,9 @@
                {list,  $l,        "list",  undefined,      "Describe available diagnostic tasks"             },
                {usage, $h,        "help",  undefined,      "Display help/usage"                              },
                % should we calc and interpolate the actual cwd for the below?
-               {export,undefined, "export",undefined,      "Package system info in '$CWD/export.zip'"        }
+               {export,undefined, "export",undefined,      "Package system info in '$CWD/export.zip'"        },
+               {terms, $m,        undefined, undefined,      "Emit machine readable output"                  },
+               {terms, undefined, "mr_out",  {string, stdin},"Emit machine readable output to file <mr_out>" }
               ]).
 
 -define(USAGE_OPTS, [ O || O <- ?OPTS,
@@ -133,7 +135,13 @@ run(InputChecks) ->
                     io:format("No diagnostic messages to report.~n"),
                     halt(0);
                 _ ->
-                    lists:foreach(fun riaknostic_check:print/1, SortedMessages),
+                    case application:get_env(riaknostic, terms) of
+                        {ok, true} ->
+                            {ok, Path} = application:get_env(riaknostic, term_target),
+                            riaknostic_check:write_mr_list(SortedMessages, Path);
+                        undefined ->		    
+                            lists:foreach(fun riaknostic_check:print/1, SortedMessages)
+                    end,
                     halt(1)
             end
     end.
@@ -174,4 +182,10 @@ process_option(list, _) ->
 process_option(usage, _) ->
     usage;
 process_option(export, _) ->
-    export.
+    export;
+process_option(terms, Result) ->
+    process_option({terms, stdin}, Result);
+process_option({terms, Path}, Result) ->
+    application:set_env(riaknostic, terms, true),
+    application:set_env(riaknostic, term_target, Path),
+    Result.
