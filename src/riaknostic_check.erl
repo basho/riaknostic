@@ -106,6 +106,6 @@ print({Level, Mod, Data}) ->
 %% of the human-readable version printed to stdout.
 -spec write_mr_list(list(), string()) -> ok.
 write_mr_list(MessageList, FileName) ->
-    {ok, Fh} = file:open(os:getenv("CALLING_DIR") ++ FileName, [write]), 
+    {ok, Fh} = file:open(os:cmd("pwd") ++ FileName, [write]), 
     io:format(Fh, "~p", [{riaknostic_report, ?MR_OUTPUT_VSN, MessageList}]),
     file:close(Fh).
