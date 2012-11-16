@@ -71,9 +71,9 @@ get_file_list() ->
     List = [
             "/etc/hosts", % might want to omit
             "/etc/hostname",
-            "/etc/riak/",
-            "/etc/fstab",
-            "/var/log/riak/"
+            "/etc/riak/", %TODO get from ENV variable
+            "/etc/fstab", 
+            "/var/log/riak/" %TODO get from ENV variable
            ],
     PerOS = case os:type() of 
                 {unix, linux} ->
@@ -122,6 +122,7 @@ copy_to_dir(FileList, Dir) ->
             case Res of
                 {ok, _} -> ok;
                 {error, Reason} ->
+                    %TODO: Something better than a hard stop
                     io:format("Couldn't copy ~s. Error: ~s", 
                               [FileName, Reason])
             end,
