@@ -59,17 +59,30 @@ check() ->
                  {unix, freebsd} -> [];
                  {unix, sunos} -> []
              end,
-    Recs = check_params(Params),
-    Recs.
+	
+	case find_sysctl() of
+		{ok, SysctlPath} ->
+			check_params(Params, SysctlPath);
+		{error, notfound} -> 
+			[{critical,{error, notfound}}]
+	end.
 
-check_params(List) ->
-    check_params(List, []).
+find_sysctl() ->
+	ListOfPaths = ["/sbin/sysctl","/usr/sbin/sysctl"],
+	case lists:filter(fun filelib:is_file/1, ListOfPaths) of 
+		[] -> {error, notfound};
+		[Location|T] -> {ok, Location}
+	end.
+		
+check_params(List, SysctlPath) ->
+    check_params(List, [], SysctlPath).
 
-check_params([], Acc) ->
+check_params([], Acc, _SysctlPath) ->
     Acc;
-check_params([H|T], Acc) ->
+
+check_params([H|T], Acc, SysctlPath) ->
     {Param, Val, Direction } = H,
-    Output = riaknostic_util:run_command("sysctl -n " ++ Param),
+    Output = riaknostic_util:run_command(SysctlPath ++ " -n " ++ Param),
     Actual = list_to_integer(Output -- "\n"),
     Good = case Direction of
                gte -> Actual =< Val;
@@ -80,13 +93,15 @@ check_params([H|T], Acc) ->
                true ->  {info, {good, Param, Actual, Val, Direction}};
                false -> {critical, {bad, Param, Actual, Val, Direction}}
            end,
-    check_params(T, Acc ++ [Note]).
+    check_params(T, Acc ++ [Note], SysctlPath).
                        
 -spec format(term()) -> {io:format(), [term()]}.
 format({good, Param, Actual, Val, Direction}) ->
-    {"~s is ~p ~s ~p)", [Param, Actual, direction_to_word(Direction), Val]};
+    {"~s is ~p ~s ~p", [Param, Actual, direction_to_word(Direction), Val]};
 format({bad, Param, Actual, Val, Direction}) ->
-    {"~s is ~p, should be ~s~p)", [Param, Actual, direction_to_word2(Direction), Val]}.
+    {"~s is ~p, should be ~s~p", [Param, Actual, direction_to_word2(Direction), Val]};
+format({error, notfound}) ->
+    {"sysctl could not be located in /sbin or /usr/sbin",[]}.
 
 direction_to_word(Direction) ->
     case Direction of 
