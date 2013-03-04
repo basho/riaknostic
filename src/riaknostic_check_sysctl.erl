@@ -42,7 +42,7 @@
                        {"net.ipv4.tcp_fin_timeout",            15, gte},
                        {"net.ipv4.tcp_tw_reuse",                1, eq}
                       ]).
-					  
+
 -spec description() -> string().
 description() ->
     "Check sysctl tuning parameters".
