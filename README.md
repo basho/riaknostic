@@ -20,7 +20,9 @@ As shown in the above output, Riaknostic tells us about two problems right away.
 
 ## Installation
 
-NOTE: Riaknostic depends on features introduced by Erlang version R14B04, so verify that you've installed this version of Erlang before proceeding with installation.
+**Important**: If you are running Riak v1.3.0 or greater, you already have Riaknostic, so you can skip to the **Usage** section below.
+
+Riaknostic depends on features introduced by Erlang version R14B04, so verify that you've installed this version of Erlang before proceeding with installation.
 
 To install `riaknostic`, download the latest package version, and extract it within the directory shown for your operating system in the following table:
 
