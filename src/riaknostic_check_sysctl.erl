@@ -84,9 +84,9 @@ check_params([H|T], Acc) ->
                        
 -spec format(term()) -> {io:format(), [term()]}.
 format({good, Param, Actual, Val, Direction}) ->
-    {"~s is ~p ~s ~p)", [Param, Actual, direction_to_word(Direction), Val]};
+    {"~s is ~p ~s ~p", [Param, Actual, direction_to_word(Direction), Val]};
 format({bad, Param, Actual, Val, Direction}) ->
-    {"~s is ~p, should be ~s~p)", [Param, Actual, direction_to_word2(Direction), Val]}.
+    {"~s is ~p, should be ~s~p", [Param, Actual, direction_to_word2(Direction), Val]}.
 
 direction_to_word(Direction) ->
     case Direction of 
