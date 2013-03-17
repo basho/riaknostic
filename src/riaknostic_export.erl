@@ -60,6 +60,9 @@ get_cmd_list() ->
                 {unix, freebsd} ->
                     [
                     ] ++ Stats;
+                {unix, openbsd} ->
+                    [
+                    ] ++ Stats;
                 {unix, sunos} ->
                     [
                     ];
@@ -82,6 +85,9 @@ get_file_list() ->
                     ];
                 {unix, darwin} -> []; % unsupported for production
                 {unix, freebsd} ->
+                    [
+                    ];
+                {unix, openbsd} ->
                     [
                     ];
                 {unix, sunos} ->

@@ -43,6 +43,11 @@
                        {"net.ipv4.tcp_tw_reuse",                1, eq}
                       ]).
 
+-define(OPENBSD_PARAMS, [
+                       {"kern.somaxconn",                    4000, lte}
+                      ]).
+		
+
 -spec description() -> string().
 description() ->
     "Check sysctl tuning parameters".
@@ -55,9 +60,11 @@ valid() ->
 check() ->
     Params = case os:type() of
                  {unix, linux} -> ?LINUX_PARAMS;
+                 {unix, openbsd} -> ?OPENBSD_PARAMS;
                  {unix, darwin} -> []; 
                  {unix, freebsd} -> [];
-                 {unix, sunos} -> []
+                 {unix, sunos} -> [];
+                 _ -> []
              end,
     Recs = check_params(Params),
     Recs.
