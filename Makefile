@@ -1,6 +1,6 @@
 .PHONY: rel stagedevrel deps test
 
-all: deps compile escriptize
+all: deps compile
 
 compile:
 	./rebar compile

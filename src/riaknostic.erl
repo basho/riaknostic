@@ -60,13 +60,9 @@
                {user,  undefined, "user",  string,         undefined                                         },
                {level, $d,        "level", {atom, notice}, "Minimum message severity level (default: notice)"},
                {list,  $l,        "list",  undefined,      "Describe available diagnostic tasks"             },
-               {usage, $h,        "help",  undefined,      "Display help/usage"                              },
                % should we calc and interpolate the actual cwd for the below?
                {export,undefined, "export",undefined,      "Package system info in '$CWD/export.zip'"        }
               ]).
-
--define(USAGE_OPTS, [ O || O <- ?OPTS,
-                           element(5,O) =/= undefined]).
 
 %% @doc The main entry point for the riaknostic escript.
 -spec main(CommandLineArguments::[string()]) -> any().
@@ -77,13 +73,11 @@ main(Args) ->
         {ok, {Opts, NonOptArgs}} ->
             case process_opts(Opts) of
                 list -> list_checks();
-                usage -> usage();
                 run -> run(NonOptArgs);
                 export -> riaknostic_export:export()
             end;
         {error, Error} ->
-            io:format("Invalid option sequence given: ~w~n", [Error]),
-            usage()
+            io:format("Invalid option sequence given: ~w~n", [Error])
     end.
 
 list_checks() ->
@@ -94,14 +88,10 @@ list_checks() ->
                           io:format("  ~.20s ~s~n", [Mod, Desc])
                   end, lists:sort(Descriptions)).
 
-usage() ->
-    getopt:usage(?USAGE_OPTS, "riak-admin diag", "[check_name ...]", [{"check_name", "A specific check to run"}]).
-
 run(InputChecks) ->
     case riaknostic_config:prepare() of
         {error, Reason} ->
-            io:format("Fatal error: ~s~n", [Reason]),
-            halt(1);
+            io:format("Fatal error: ~s~n", [Reason]);
         _ ->
             ok
     end,
@@ -117,11 +107,18 @@ run(InputChecks) ->
                            end, [], Checks),
     case Messages of
         [] ->
-            io:format("No diagnostic messages to report.~n"),
-            halt(0);
+            io:format("No diagnostic messages to report.~n");
         _ ->
             %% Print the most critical messages first
-            LogLevelNum = lager:minimum_loglevel(lager:get_loglevels()),
+            LogLevelNum = lists:foldl(
+              fun({mask, Mask}, Acc) ->
+                    Mask bor Acc;
+                (Level, Acc) when is_integer(Level) ->
+                    {mask, Mask} = lager_util:config_to_mask(lager_util:num_to_level(Level)),
+                    Mask bor Acc;
+                (_, Acc) ->
+                    Acc
+              end, 0, lager:get_loglevels()),
             FilteredMessages = lists:filter(fun({Level,_,_}) ->
                                                     lager_util:level_to_num(Level) =< LogLevelNum
                                             end, Messages),
@@ -130,11 +127,10 @@ run(InputChecks) ->
                                         end, FilteredMessages),
             case SortedMessages of
                 [] ->
-                    io:format("No diagnostic messages to report.~n"),
-                    halt(0);
+                    io:format("No diagnostic messages to report.~n");
                 _ ->
-                    lists:foreach(fun riaknostic_check:print/1, SortedMessages),
-                    halt(1)
+                    io:format("Check ~s for diagnostic output.~n",[proplists:get_value(lager_file_backend,gen_event:which_handlers(lager_event))]),
+                    lists:foreach(fun riaknostic_check:print/1, SortedMessages)
             end
     end.
 
