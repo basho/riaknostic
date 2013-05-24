@@ -139,7 +139,7 @@ validate_checks(Check, {Mods, SNames}) ->
         {Check, Mod} ->
             {[Mod|Mods], lists:delete({Check, Mod}, SNames)};
         _ ->
-            lager:warning("Unknown check '~s' specified, skipping.", [Check]),
+            io:format("Unknown check '~s' specified, skipping.", [Check]),
             {Mods, SNames}
     end.
 
