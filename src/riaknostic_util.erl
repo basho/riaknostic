@@ -25,6 +25,7 @@
 -module(riaknostic_util).
 -export([short_name/1,
          run_command/1,
+         log/2,log/3,
          binary_to_float/1]).
 
 %% @doc Converts a check module name into a short name that can be
@@ -38,14 +39,14 @@ short_name(Mod) when is_atom(Mod) ->
 %% redirected to stdout so its output will be included.
 -spec run_command(Command::iodata()) -> StdOut::iodata().
 run_command(Command) ->
-    lager:debug("Running shell command: ~s", [Command]),
+    riaknostic_util:log(debug, "Running shell command: ~s", [Command]),
     Port = erlang:open_port({spawn,Command},[exit_status, stderr_to_stdout]),
     do_read(Port, []).
 
 do_read(Port, Acc) ->
     receive
         {Port, {data, StdOut}} ->
-            lager:debug("Shell command output: ~n~s~n",[StdOut]),
+            riaknostic_util:log(debug, "Shell command output: ~n~s~n",[StdOut]),
             do_read(Port, Acc ++ StdOut);
         {Port, {exit_status, _}} -> 
             %%port_close(Port),
@@ -60,3 +61,29 @@ do_read(Port, Acc) ->
 -spec binary_to_float(binary()) -> float().
 binary_to_float(Bin) ->
     list_to_float(binary_to_list(Bin)).
+
+log(Level, Format, Terms) ->
+    case should_log(Level) of
+        true ->
+            io:format(lists:concat(["[", Level, "] ", Format, "~n"]), Terms);
+        false ->
+            ok
+    end,
+    lager:log(Level, self(), Format, Terms).
+
+log(Level, String) ->
+    case should_log(Level) of
+        true ->
+            io:format(lists:concat(["[", Level, "] ", String, "~n"]));
+        false ->
+            ok
+    end,
+    lager:log(Level, self(), String).
+
+should_log(Level) ->
+    AppLevel = case application:get_env(riaknostic, log_level) of
+        undefined -> info;
+        {ok, L0} -> L0
+    end,
+    lager_util:level_to_num(AppLevel) >= lager_util:level_to_num(Level).
+

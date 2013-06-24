@@ -60,7 +60,7 @@ local_command(Module, Function, Args) ->
 %% @see can_connect/0
 -spec local_command(Module::atom(), Function::atom(), Args::[term()], Timeout::integer()) -> term().
 local_command(Module, Function, Args, Timeout) ->
-    lager:debug("Local RPC: ~p:~p(~p) [~p]", [Module, Function, Args, Timeout]),
+    riaknostic_util:log(debug, "Local RPC: ~p:~p(~p) [~p]", [Module, Function, Args, Timeout]),
     rpc:call(nodename(), Module, Function, Args, Timeout).
 
 %% @doc Calls the given 0-arity module and function on all members of
@@ -86,7 +86,7 @@ cluster_command(Module, Function, Args) ->
 %% @see can_connect/0
 -spec cluster_command(Module::atom(), Function::atom(), Args::[term()], Timeout::integer()) -> term().
 cluster_command(Module, Function, Args, Timeout) ->
-    lager:debug("Cluster RPC: ~p:~p(~p) [~p]", [Module, Function, Args, Timeout]),
+    riaknostic_util:log(debug, "Cluster RPC: ~p:~p(~p) [~p]", [Module, Function, Args, Timeout]),
     Stats = stats(),
     {ring_members, RingMembers} = lists:keyfind(ring_members, 1, Stats),
     rpc:multicall(RingMembers, Module, Function, Args, Timeout).
@@ -106,7 +106,7 @@ can_connect() ->
     case is_connected() of
         true -> true;
         false ->
-            lager:debug("Not connected to the local Riak node, trying to connect. alive:~p connect_failed:~p", [is_alive(), connect_failed()]),
+            riaknostic_util:log(debug, "Not connected to the local Riak node, trying to connect. alive:~p connect_failed:~p", [is_alive(), connect_failed()]),
             maybe_connect()
     end.
 
@@ -149,7 +149,7 @@ try_connect() ->
     case {net_kernel:hidden_connect_node(TargetNode), net_adm:ping(TargetNode)} of
         {true, pong} ->
             application:set_env(riaknostic, connect_failed, false),
-            lager:debug("Connected to local Riak node ~p.", [TargetNode]),
+            riaknostic_util:log(debug, "Connected to local Riak node ~p.", [TargetNode]),
             true;
         _ ->
             application:set_env(riaknostic, connect_failed, true),
@@ -165,7 +165,7 @@ connect_failed() ->
     end.
 
 start_net() ->
-    lager:debug("Starting distributed Erlang."),
+    riaknostic_util:log(debug, "Starting distributed Erlang."),
     {Type, RiakName} = riaknostic_config:node_name(),
     ThisNode = append_node_suffix(RiakName, "_diag"),
     {ok, _} = net_kernel:start([ThisNode, Type]),
@@ -198,7 +198,7 @@ has_stats() ->
     end.
 
 fetch_stats() ->
-    lager:debug("Fetching local riak_kv_status."),
+    riaknostic_util:log(debug, "Fetching local riak_kv_status."),
     case local_command(riak_kv_status, statistics) of
         [] -> [];
         PList ->
