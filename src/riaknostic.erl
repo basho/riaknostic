@@ -129,7 +129,6 @@ run(InputChecks) ->
                 [] ->
                     io:format("No diagnostic messages to report.~n");
                 _ ->
-                    io:format("Check ~s for diagnostic output.~n",[proplists:get_value(lager_file_backend,gen_event:which_handlers(lager_event))]),
                     lists:foreach(fun riaknostic_check:print/1, SortedMessages)
             end
     end.

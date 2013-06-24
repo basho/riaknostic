@@ -94,7 +94,9 @@ modules() ->
 print({Level, Mod, Data}) ->
     case Mod:format(Data) of
         {Format, Terms} ->
-            lager:log(Level, self(), Format, Terms);
+            riaknostic_util:log(Level, Format, Terms);
         String ->
-            lager:log(Level, self(), String)
+            riaknostic_util:log(Level, String)
     end.
+
+
