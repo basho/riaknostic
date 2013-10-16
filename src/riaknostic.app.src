@@ -22,7 +22,7 @@
 {application, riaknostic,
  [
   {description, "Diagnostic tools for Riak"},
-  {vsn, "1.2.0"},
+  {vsn, git},
   {registered, []},
   {applications, [
                   kernel,
