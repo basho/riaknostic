@@ -169,7 +169,7 @@ load_app_config() ->
         false ->
             {error, "Cannot find Riak configuration directory!"};
         true ->
-            AppConfig = filename:join([etc_dir(), "app.config"]),
+            {ok, [[AppConfig]]} = init:get_argument(config),
             case file:consult(AppConfig) of
                 {ok, [Config]} ->
                     application:set_env(riaknostic, app_config, Config);
@@ -183,7 +183,10 @@ load_vm_args() ->
         false ->
             {error, "Cannot find Riak configuration directory!"};
         true ->
-            VmArgs = filename:join([etc_dir(), "vm.args"]),
+            {ok, [[AppConfig]]} = init:get_argument(config),
+            [_, YYYY, MM, DD, HH, M, SS, "config"] = string:tokens(filename:basename(AppConfig), "."),
+            VmArgs = filename:join([filename:dirname(AppConfig), 
+                                    string:join(["vm", YYYY, MM, DD, HH, M, SS, "args"], ".")]),
             case file:read_file(VmArgs) of
                 {error, Reason} ->
                     {error, io_lib:format("Could not read ~s, received error ~w!", [VmArgs, Reason])};
