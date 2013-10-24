@@ -174,12 +174,17 @@ load_app_config() ->
     end.
 
 load_vm_args() ->
-    {ok, [[AppConfig]]} = init:get_argument(config),
-    AppIndex = string:str(AppConfig, "app"),
-    ConfigIndex = string:rstr(AppConfig, "config"),
-
-    VmArgs = string:sub_string(AppConfig, 1, AppIndex - 1) ++ "vm" ++                  
-        string:sub_string(AppConfig, AppIndex + 3, ConfigIndex-1) ++ "args",
+    VmArgs = case init:get_argument(vm_args) of 
+        {ok, [[X]]} -> X;
+        _ ->
+            %% This is a backup. If for some reason -vm_args isn't specified
+            %% then assume it lives in the same dir as app.config
+            {ok, [[AppConfig]]} = init:get_argument(config),
+            AppIndex = string:str(AppConfig, "app"),
+            ConfigIndex = string:rstr(AppConfig, "config"),
+            string:sub_string(AppConfig, 1, AppIndex - 1) ++ "vm" ++
+                string:sub_string(AppConfig, AppIndex + 3, ConfigIndex-1) ++ "args"
+    end,
 
     case file:read_file(VmArgs) of
         {error, Reason} ->
