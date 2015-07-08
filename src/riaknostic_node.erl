@@ -191,7 +191,7 @@ append_node_suffix(Name, Suffix) ->
 
 has_stats() ->
     case application:get_env(riaknostic, local_stats) of
-		{ok, {badrpc, _Reason}} -> 
+	{ok, {badrpc, _Reason}} -> 
             false;
         {ok, Stats} ->
             {ok, Stats};
