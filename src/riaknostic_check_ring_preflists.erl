@@ -47,5 +47,5 @@ check() ->
 
 -spec format(term()) -> {io:format(), [term()]}.
 format({n_val_not_satisfied, PrefLists}) ->
-    {"The following preflists do not satisfy the n_val: ~p", [PrefLists]}.
+    {"The following preflists do not satisfy the n_val. Please add more nodes. ~p", [PrefLists]}.
 
