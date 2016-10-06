@@ -71,7 +71,7 @@ main(Args) ->
         {ok, {Opts, NonOptArgs}} ->
             case process_opts(Opts) of
                 list -> list_checks();
-                run -> run(NonOptArgs);
+                run -> run(NonOptArgs)
             end;
         {error, Error} ->
             io:format("Invalid option sequence given: ~w~n", [Error])
