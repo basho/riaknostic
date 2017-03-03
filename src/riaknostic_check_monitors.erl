@@ -20,19 +20,18 @@
 %%
 %% -------------------------------------------------------------------
 
-%% @doc Diagnostic that checks the local ring for any preflists that do
-%% not satisfy n_val
--module(riaknostic_check_ring_preflists).
+%% @doc Diagnostic that notes processes which have a high monitor count(>50)
+-module(riaknostic_check_monitors).
 -behaviour(riaknostic_check).
 
 -export([description/0,
-         valid/0,
-         check/0,
-         format/1]).
+    valid/0,
+    check/0,
+    format/1]).
 
 -spec description() -> string().
 description() ->
-    "Check ring satisfies n_val".
+    "Note processes with >50 monitors".
 
 -spec valid() -> boolean().
 valid() ->
@@ -40,12 +39,17 @@ valid() ->
 
 -spec check() -> [{lager:log_level(), term()}].
 check() ->
-    case riaknostic_node:local_command(riak_core_ring_util, check_ring) of
-        [] -> [];
-        PrefLists -> [ {warning, {n_val_not_satisfied, PrefLists}} ]
+    Fun = fun() -> [{Pid,NumMon} || Pid <- processes(),
+        [{monitors,Mon}] <- [process_info(Pid, [monitors])],
+        NumMon <- [length(Mon)],
+        NumMon > 50] end,
+    case riaknostic_node:local_command(erlang, apply, [Fun,[]]) of
+        [] ->
+            [];
+        Pids ->
+            [{warning, {high_monitor_count, Pids}}]
     end.
 
 -spec format(term()) -> {io:format(), [term()]}.
-format({n_val_not_satisfied, PrefLists}) ->
-    {"The following preflists do not satisfy the n_val. Please add more nodes. ~p", [PrefLists]}.
-
+format({high_monitor_count, Pids}) ->
+    {"The following processes have more than 50 monitors: ~p", [Pids]}.
