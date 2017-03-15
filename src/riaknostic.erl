@@ -54,6 +54,8 @@
 -module(riaknostic).
 -export([main/1]).
 
+-include_lib("lager/include/lager.hrl").
+
 -define(OPTS, [
                {etc,   undefined, "etc",   string,         undefined                                         },
                {base,  undefined, "base",  string,         undefined                                         },
@@ -115,7 +117,7 @@ run(InputChecks) ->
                     Mask bor Acc;
                 (_, Acc) ->
                     Acc
-              end, 0, lager:get_loglevels()),
+              end, 0, lager:get_loglevels(?DEFAULT_SINK)),
             FilteredMessages = lists:filter(fun({Level,_,_}) ->
                                                     lager_util:level_to_num(Level) =< LogLevelNum
                                             end, Messages),
