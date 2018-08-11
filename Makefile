@@ -3,28 +3,28 @@
 all: deps compile
 
 compile:
-	./rebar compile
+	./rebar3 compile
 
 deps:
-	./rebar get-deps
+	./rebar3 get-deps
 
 clean:
-	./rebar clean
+	./rebar3 clean
 
 distclean: clean
-	./rebar delete-deps
+	./rebar3 delete-deps
 
 test:
-	./rebar compile eunit
+	./rebar3 compile eunit
 
 escriptize:
-	./rebar escriptize
+	./rebar3 escriptize
 
 ##
 ## Doc targets
 ##
 docs:
-	./rebar doc skip_deps=true
+	./rebar3 doc skip_deps=true
 
 pages: docs
 	cp priv/index.html doc/_index.html
