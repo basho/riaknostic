@@ -180,7 +180,7 @@ load_vm_args() ->
             %% This is a backup. If for some reason -vm_args isn't specified
             %% then assume it lives in the same dir as app.config
             {ok, [[AppConfig]]} = init:get_argument(config),
-            AppIndex = string:str(AppConfig, "app"),
+            AppIndex = string:str(AppConfig, "sys"),
             ConfigIndex = string:rstr(AppConfig, "config"),
             string:sub_string(AppConfig, 1, AppIndex - 1) ++ "vm" ++
                 string:sub_string(AppConfig, AppIndex + 3, ConfigIndex-1) ++ "args"
@@ -246,6 +246,8 @@ data_directory(riak_kv_bitcask_backend) ->
     [ get_app_env([bitcask, data_root]) ];
 data_directory(riak_kv_eleveldb_backend) ->
     [ get_app_env([eleveldb, data_root]) ];
+data_directory(riak_kv_leveled_backend) ->
+    [ get_app_env([leveled, data_root]) ];
 data_directory(merge_index_backend) ->
     [ get_app_env([merge_index, data_root]) ];
 data_directory(riak_kv_innostore_backend) ->
@@ -270,6 +272,13 @@ multi_data_directory({_, riak_kv_eleveldb_backend, Props}) ->
     case proplists:get_value(data_root, Props) of
         undefined ->
             get_app_env([eleveldb, data_root]);
+        Path when is_list(Path) ->
+            Path
+    end;
+multi_data_directory({_, riak_kv_leveled_backend, Props}) ->
+    case proplists:get_value(data_root, Props) of
+        undefined ->
+            get_app_env([leveled, data_root]);
         Path when is_list(Path) ->
             Path
     end;
