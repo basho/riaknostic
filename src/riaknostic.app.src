@@ -27,8 +27,6 @@
   {applications, [
                   kernel,
                   stdlib,
-                  inets,
                   lager
-                 ]},
-  {mod, { riaknostic_app, []}}
+                 ]}
  ]}.
