@@ -31,7 +31,9 @@
          check/0,
          format/1]).
 
+-ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
+-endif.
 
 -spec description() -> string().
 description() ->
@@ -53,6 +55,12 @@ check() ->
             [{warning, {not_ring_member, NodeName}}]
     end.
 
+-spec format(term()) -> {io:format(), [term()]}.
+format({not_ring_member, Nodename}) ->
+    {"Local node ~w is not a member of the ring. Please check that the -name setting in vm.args is correct.", [Nodename]}.
+
+-ifdef(TEST).
+
 check_test() ->
     meck:new(riaknostic_node, [passthrough]),
     meck:expect(riaknostic_node, stats, fun() -> [{ring_members, ["riak@127.0.0.1"]}, {nodename, ["notmember@127.0.0.1"]}] end),
@@ -61,6 +69,4 @@ check_test() ->
     ?assertNotEqual([{warning, {not_ring_member, ["notequal@127.0.0.1"]}}], check()),
     meck:unload(riaknostic_node).
 
--spec format(term()) -> {io:format(), [term()]}.
-format({not_ring_member, Nodename}) ->
-    {"Local node ~w is not a member of the ring. Please check that the -name setting in vm.args is correct.", [Nodename]}.
+-endif.
