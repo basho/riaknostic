@@ -1,8 +1,8 @@
 language: erlang
-notifications:
-  disabled: true
-env:
-  - R15B
-  - R14B04
-  - R14B03
-  - R14B02
+otp_release:
+  - 20.3.8
+  - 21.3
+  - 22.3
+script:
+  - chmod u+x rebar3
+  - ./rebar3 do upgrade, compile, xref, dialyzer, eunit

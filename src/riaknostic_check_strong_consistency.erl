@@ -42,17 +42,17 @@ valid() ->
 -spec check() -> [{lager:log_level(), term()}].
 check() ->
     StrongConsistencyOption = riaknostic_config:get_app_env([riak_core, enable_consensus]),
-    { AAEOption, _ } = riaknostic_config:get_app_env([riak_kv, anti_entropy]),
+    {AAEOption, _ } = riaknostic_config:get_app_env([riak_kv, anti_entropy]),
     maybe_strong_consistency_aae_misconfigured(StrongConsistencyOption, AAEOption).
 
--spec maybe_strong_consistency_aae_misconfigured(boolean, on | off | any()) -> [ { term(), term() } ] | [].
+-spec maybe_strong_consistency_aae_misconfigured(boolean(), on | off | any()) -> [{term(), term()}].
 maybe_strong_consistency_aae_misconfigured(true, off) ->
-    [ { critical, { strong_consistency_aae_misconfigured } } ];
+    [ { critical, {strong_consistency_aae_misconfigured} } ];
 maybe_strong_consistency_aae_misconfigured(false, _) ->
     [];
 maybe_strong_consistency_aae_misconfigured(true, on) ->
     [].
 
 -spec format(term()) -> {io:format(), [term()]}.
-format({ strong_consistency_aae_misconfigured }) ->
+format({strong_consistency_aae_misconfigured}) ->
     { "Strong consistency has been enabled without AAE -- all consistent operations will timeout until AAE is enabled.", [] }.

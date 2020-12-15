@@ -50,20 +50,14 @@
 %% @end
 
 -module(riaknostic_check).
--export([behaviour_info/1]).
 -export([check/1,
          modules/0,
          print/1]).
 
-%% @doc The behaviour definition for diagnostic modules.
--spec behaviour_info(atom()) -> 'undefined' | [{atom(), arity()}].
-behaviour_info(callbacks) ->
-    [{description, 0},
-     {valid, 0},
-     {check, 0},
-     {format, 1}];
-behaviour_info(_) ->
-    undefined.
+-callback description() -> string().
+-callback valid() -> boolean().
+-callback check() -> [{lager:log_level(), term()}].
+-callback format(term()) -> {io:format(), list(term())}.
 
 %% @doc Runs the diagnostic in the given module, if it is valid. Returns a
 %% list of messages that will be printed later using print/1.
